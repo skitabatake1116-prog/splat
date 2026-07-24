@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>スプラ3 Xマッチ潜り判定器 Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #0b0f19;
+            color: #f8fafc;
+        }
+        .bg-splat-yellow { background-color: #eaff3d; }
+        .text-splat-yellow { color: #eaff3d; }
+        .bg-splat-purple { background-color: #603bff; }
+        .text-splat-purple { color: #603bff; }
+        .glass-card {
+            background: rgba(26, 35, 50, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="pb-24">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-splat-yellow text-slate-950 font-black px-4 py-2 rounded-full shadow-2xl text-xs flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-10px]">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toast-message">評価を保存しました！</span>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 glass-card px-4 py-3 flex justify-between items-center border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-full bg-splat-yellow flex items-center justify-center text-slate-950 font-black text-lg shadow-lg">
+                X
+            </div>
+            <h1 class="text-base font-black tracking-wider text-white">X Match Checker</h1>
+        </div>
+        <button id="refresh-btn" onclick="fetchSchedule()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-full flex items-center gap-1.5 transition active:scale-95">
+            <i class="fa-solid fa-rotate" id="refresh-icon"></i>
+            <span>更新</span>
+        </button>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-md mx-auto p-4 space-y-5">
+
+        <!-- Active Weapon Selector -->
+        <section class="space-y-2">
+            <div class="flex justify-between items-center px-1">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-crosshairs text-splat-yellow"></i> 判定対象ブキ (最大5つ)
+                </span>
+                <button onclick="openWeaponManagerModal()" class="text-xs text-splat-yellow hover:underline font-bold">
+                    <i class="fa-solid fa-pen-to-square"></i> 編集
+                </button>
+            </div>
+            <div id="weapon-tabs-container" class="grid grid-cols-5 gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+                <!-- Dynamic weapon tabs -->
+            </div>
+        </section>
+
+        <!-- Current Schedule & Tier Status -->
+        <section class="space-y-3">
+            <div class="flex justify-between items-center px-1">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-gamepad text-splat-yellow"></i> 現在開催中のステージ (アロワナ)
+                </h2>
+                <div class="text-[10px] text-slate-400 font-medium">
+                    時間: <span id="current-time-slot" class="font-bold text-slate-200">--:-- ~ --:--</span>
+                </div>
+            </div>
+
+            <!-- Current Matches Stage Cards Container -->
+            <div id="current-schedules-list" class="space-y-4">
+                <!-- Dynamic Stage Cards -->
+            </div>
+        </section>
+
+        <!-- Rating Settings Button -->
+        <section class="pt-2">
+            <button onclick="openSettingsModal()" class="w-full py-3.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl border border-slate-700/80 flex items-center justify-center gap-2 shadow-lg transition active:scale-[0.98]">
+                <i class="fa-solid fa-sliders text-splat-yellow"></i>
+                <span>ステージ×ブキ評価の編集</span>
+            </button>
+        </section>
+
+    </main>
+
+    <!-- Modal 1: Weapon Manager Modal -->
+    <div id="weapon-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex flex-col justify-end sm:justify-center p-0 sm:p-4">
+        <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl max-w-md w-full mx-auto flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gun text-splat-yellow"></i> 登録ブキ設定 (最大5つ)
+                </h3>
+                <button onclick="closeWeaponManagerModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-3">
+                <p class="text-xs text-slate-400 mb-2">よく使用するブキの名前を最大5つ登録してください。</p>
+                <div id="weapon-inputs-list" class="space-y-2">
+                    <!-- Inputs generated by JS -->
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-800 bg-slate-900/90">
+                <button onclick="saveWeapons()" class="w-full py-3 bg-splat-yellow text-slate-950 font-extrabold rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition">
+                    ブキ設定を保存
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Stage x Weapon Rating Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex flex-col justify-end sm:justify-center p-0 sm:p-4">
+        <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl h-[88vh] sm:h-[82vh] max-w-md w-full mx-auto flex flex-col shadow-2xl overflow-hidden">
+            
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-star text-splat-yellow"></i> ステージ×ブキの評価設定
+                </h3>
+                <button onclick="closeSettingsModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-5">
+                
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">評価するブキを選択</label>
+                    <div id="settings-weapon-tabs" class="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <!-- Dynamic weapon selection buttons -->
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">ルールを選択</label>
+                    <div class="grid grid-cols-4 gap-1.5" id="rule-selector-buttons">
+                        <button onclick="selectSettingsRule('AREA')" class="rule-btn py-2 text-xs font-bold rounded-lg bg-splat-yellow text-slate-900" data-rule="AREA">エリア</button>
+                        <button onclick="selectSettingsRule('YAGURA')" class="rule-btn py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-300" data-rule="YAGURA">ヤグラ</button>
+                        <button onclick="selectSettingsRule('HOKO')" class="rule-btn py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-300" data-rule="HOKO">ホコ</button>
+                        <button onclick="selectSettingsRule('ASARI')" class="rule-btn py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-300" data-rule="ASARI">アサリ</button>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-300">各ステージの評価 (S〜F)</span>
+                        <span class="text-[10px] text-slate-500">タップで即時反映されます</span>
+                    </div>
+                    <div id="stage-rating-list" class="space-y-2.5">
+                        <!-- Dynamic Stage Items -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-800 bg-slate-900/90">
+                <button onclick="saveRatings()" class="w-full py-3 bg-splat-yellow text-slate-950 font-extrabold rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition">
+                    評価を保存して閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const RULES = {
+            AREA: 'ガチエリア',
+            YAGURA: 'ガチヤグラ',
+            HOKO: 'ガチホコバトル',
+            ASARI: 'ガチアサリ'
+        };
+
+        const RULE_TRANSLATIONS = {
+            'Splat Zones': 'ガチエリア',
+            'Tower Control': 'ガチヤグラ',
+            'Rainmaker': 'ガチホコバトル',
+            'Clam Blitz': 'ガチアサリ'
+        };
+
+        const STAGE_TRANSLATIONS = {
+            'Scorch Gorge': 'ユノハナ大渓谷',
+            'Eeltail Alley': 'ゴンズイ地区',
+            'Hagglefish Market': 'ヤガラ市場',
+            'Undertow Spillway': 'マテガイ放水路',
+            'Mincemeat Metalworks': 'ナメロウ金属',
+            'Hammerhead Bridge': 'マサバ海峡大橋',
+            "Museum d'Alfonsino": 'キンメダイ美術館',
+            'Mahi-Mahi Resort': 'マヒマヒリゾート＆スパ',
+            'Inkblot Art Academy': '海女美術大学',
+            'Sturgeon Shipyard': 'チョウザメ船ドック',
+            'MakoMart': 'ザトウマーケット',
+            'Wahoo World': 'ヤシガニ造船',
+            'Flounder Heights': 'ヒラメが丘団地',
+            'Brinewater Springs': 'クサヤ温泉',
+            "Um'ami Ruins": 'ナンプラー遺跡',
+            'Barnacle & Dime': 'タラポートショッピングパーク',
+            'Humpback Pump Track': 'コンブトラック',
+            'Manta Maria': 'マンタマリア号',
+            'Crableg Capital': 'タカアシ経済特区',
+            'Shipshape Cargo Co.': 'オヒョウ海運',
+            'Robo ROM-en': 'バイガイ亭',
+            'Bluefin Depot': 'ネギトロ炭鉱',
+            'Lemuria Hub': 'リュウグウターミナル',
+            'Urchin Underpass': 'デカライン高架下',
+            'Marlin Airport': 'カジキ空港'
+        };
+
+        const RATING_SCORES = {
+            'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1, 'F': 0
+        };
+
+        const RATING_COLORS = {
+            'S': 'bg-amber-400 text-slate-950',
+            'A': 'bg-emerald-400 text-slate-950',
+            'B': 'bg-sky-400 text-slate-950',
+            'C': 'bg-slate-600 text-slate-200',
+            'D': 'bg-rose-500 text-white',
+            'F': 'bg-purple-900 text-purple-200'
+        };
+
+        const STAGES = [
+            { name: "ユノハナ大渓谷", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/d7a46fa7dfa74e50d5ec42d45b5cc45426d03d36_0.png", color: "from-amber-700 to-amber-950" },
+            { name: "ゴンズイ地区", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/318efee0b59f37ef602280d9bc3be9a296d9e0dd_0.png", color: "from-slate-700 to-indigo-950" },
+            { name: "ヤガラ市場", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/d9f365d5dfa74e50d5ec42d45b5cc45426d03d36_0.png", color: "from-orange-700 to-amber-950" },
+            { name: "マテガイ放水路", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/b3a1a45d064cfb159f8c148e65ec8d844cfa068e_0.png", color: "from-blue-800 to-slate-950" },
+            { name: "ナメロウ金属", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/6221d60b57731d102e3dc412b1a3d0774df1cf40_0.png", color: "from-zinc-700 to-slate-950" },
+            { name: "ヤシガニ造船", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/26a644e59f27110e53a33303f9dc6e8d1591f862_0.png", color: "from-cyan-800 to-slate-950" },
+            { name: "マサバ海峡大橋", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/b2ffed9f30b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-sky-700 to-blue-950" },
+            { name: "キンメダイ美術館", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/a1458e0a30b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-purple-800 to-slate-950" },
+            { name: "マヒマヒリゾート＆スパ", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/f1d643d930b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-teal-600 to-cyan-950" },
+            { name: "海女美術大学", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/0812981330b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-rose-800 to-slate-950" },
+            { name: "チョウザメ船ドック", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/48bf813430b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-yellow-800 to-slate-950" },
+            { name: "ザトウマーケット", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/229a43a030b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-emerald-800 to-slate-950" },
+            { name: "ヒラメが丘団地", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/88c691f1a54b383eb893aa5b4e1564ea07d0f983_0.png", color: "from-orange-800 to-slate-950" },
+            { name: "クサヤ温泉", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/cd423ef81f21d3f57c5a08dbcd22bcf7471be851_0.png", color: "from-red-800 to-slate-950" },
+            { name: "ナンプラー遺跡", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/59e66ffebaf101b02d64a0cd9103c2005c242c7e_0.png", color: "from-amber-800 to-stone-950" },
+            { name: "タラポートショッピングパーク", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/432a688a25ed5bc59599d14691763a8a044db9b5_0.png", color: "from-indigo-700 to-slate-950" },
+            { name: "コンブトラック", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/67ea64ffbe2cd1faef09e99a80eef671a54b383e_0.png", color: "from-lime-800 to-slate-950" },
+            { name: "マンタマリア号", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/6232230a84dfa18cf526fb3bf1a980dd280e2f5f_0.png", color: "from-blue-700 to-indigo-950" },
+            { name: "タカアシ経済特区", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/f38210cd4ec70449cf8fdfa0fa3d00adffbe0a68_0.png", color: "from-violet-800 to-slate-950" },
+            { name: "オヒョウ海運", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/0d2c0b6b0c2a233b87cfbe2010bfbe51c6c51a37_0.png", color: "from-sky-800 to-slate-950" },
+            { name: "バイガイ亭", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/7e2c90e0b3c22a7fbe8a5d2a93fb54228ec5613a_0.png", color: "from-amber-700 to-slate-950" },
+            { name: "ネギトロ炭鉱", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/2660a5f979fe7b7be6476e33f389ea1a3edecffc_0.png", color: "from-stone-700 to-slate-950" },
+            { name: "リュウグウターミナル", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/7a6bfef6484e037ee41f714eb6c611f7c0066b59_0.png", color: "from-fuchsia-800 to-slate-950" },
+            { name: "デカライン高架下", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/98e53030654e4ce2aeca98e53030654e4ce2aeca_0.png", color: "from-teal-700 to-slate-950" },
+            { name: "カジキ空港", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/054e20fa499c894fb21fae5dbd9667746cbbf3a4_0.png", color: "from-cyan-700 to-blue-950" }
+        ];
+
+        let weapons = JSON.parse(localStorage.getItem('splat3_xmatch_weapons') || '["スプラシューター", "52ガロン", "ロングブラスター", "ボトルガイザー", "ジムワイパー"]');
+        let selectedWeaponIndex = parseInt(localStorage.getItem('splat3_selected_weapon_idx') || '0');
+        let userRatings = JSON.parse(localStorage.getItem('splat3_xmatch_weapon_ratings') || '{}');
+
+        let currentScheduleData = null;
+        let selectedSettingsRule = 'AREA';
+        let selectedSettingsWeaponIdx = 0;
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            if (!toast || !toastMsg) return;
+            
+            toastMsg.textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+            }, 2000);
+        }
+
+        function initRatings() {
+            let updated = false;
+            for (let wIdx = 0; wIdx < 5; wIdx++) {
+                if (!userRatings[wIdx]) {
+                    userRatings[wIdx] = {};
+                    updated = true;
+                }
+                Object.keys(RULES).forEach(rule => {
+                    if (!userRatings[wIdx][rule]) {
+                        userRatings[wIdx][rule] = {};
+                        updated = true;
+                    }
+                    STAGES.forEach(stg => {
+                        if (!userRatings[wIdx][rule][stg.name]) {
+                            userRatings[wIdx][rule][stg.name] = 'B';
+                            updated = true;
+                        }
+                    });
+                });
+            }
+            if (updated) {
+                saveRatingsToStorage();
+            }
+        }
+
+        function saveRatingsToStorage() {
+            localStorage.setItem('splat3_xmatch_weapon_ratings', JSON.stringify(userRatings));
+        }
+
+        function renderWeaponTabs() {
+            const container = document.getElementById('weapon-tabs-container');
+            container.innerHTML = '';
+
+            weapons.forEach((wName, idx) => {
+                const isSelected = idx === selectedWeaponIndex;
+                const btn = document.createElement('button');
+                btn.onclick = () => selectActiveWeapon(idx);
+                btn.className = `py-2 px-1 rounded-xl text-xs font-bold truncate transition-all flex flex-col items-center gap-0.5 ${
+                    isSelected 
+                        ? 'bg-splat-yellow text-slate-950 shadow-md ring-2 ring-splat-yellow/50 scale-[1.02]' 
+                        : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
+                }`;
+                btn.innerHTML = `
+                    <span class="text-[9px] opacity-70">W${idx + 1}</span>
+                    <span class="w-full truncate">${wName || '未登録'}</span>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function selectActiveWeapon(idx) {
+            selectedWeaponIndex = idx;
+            localStorage.setItem('splat3_selected_weapon_idx', idx.toString());
+            renderWeaponTabs();
+            renderSchedule();
+        }
+
+        function renderVisualFallbackCard(stageName, colorGradient, rating, ratingBadgeColor) {
+            return `
+                <div class="w-full h-36 sm:h-40 rounded-2xl relative overflow-hidden bg-gradient-to-br ${colorGradient || 'from-slate-800 to-slate-950'} border border-white/10 shadow-lg flex items-center justify-center">
+                    <svg class="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <path d="0,30 Q40,60 100,20 L100,100 L0,100 Z" fill="currentColor" class="text-slate-950"></path>
+                        <circle cx="80" cy="30" r="15" fill="currentColor" class="text-white/20"></circle>
+                    </svg>
+
+                    <div class="absolute bottom-3 left-3 z-20 pointer-events-none">
+                        <span class="text-white font-black text-sm sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">
+                            ${stageName}
+                        </span>
+                    </div>
+                    
+                    <div class="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 shadow-lg pointer-events-none">
+                        <span class="text-[10px] text-slate-300 font-bold">評価</span>
+                        <span class="w-7 h-7 rounded-lg ${ratingBadgeColor} flex items-center justify-center font-black text-sm shadow">
+                            ${rating}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleImageError(imgEl, colorGradient, stageName, rating, ratingBadgeColor) {
+            const parent = imgEl.parentElement;
+            if (!parent) return;
+            parent.outerHTML = renderVisualFallbackCard(stageName, colorGradient, rating, ratingBadgeColor);
+        }
+
+        function getStageImageHtml(stageMeta, directApiImage, stageName, rating, ratingBadgeColor) {
+            const colorGradient = stageMeta?.color || 'from-slate-800 to-slate-950';
+            const targetUrl = directApiImage || stageMeta?.img || '';
+
+            if (!targetUrl) {
+                return renderVisualFallbackCard(stageName, colorGradient, rating, ratingBadgeColor);
+            }
+
+            return `
+                <div class="w-full h-36 sm:h-40 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
+                    <img src="${targetUrl}" alt="${stageName}" 
+                         onerror="handleImageError(this, '${colorGradient}', '${stageName}', '${rating}', '${ratingBadgeColor}');"
+                         class="w-full h-full object-cover brightness-95 hover:scale-105 transition duration-300" />
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-transparent pointer-events-none"></div>
+
+                    <div class="absolute bottom-3 left-3 z-20 pointer-events-none">
+                        <span class="text-white font-black text-sm sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">
+                            ${stageName}
+                        </span>
+                    </div>
+
+                    <div class="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/15 shadow-xl pointer-events-none">
+                        <span class="text-[10px] text-slate-300 font-bold">評価</span>
+                        <span class="w-7 h-7 rounded-lg ${ratingBadgeColor} flex items-center justify-center font-black text-sm shadow">
+                            ${rating}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatIsoTime(isoStr) {
+            if (!isoStr) return '';
+            const date = new Date(isoStr);
+            const h = date.getHours().toString().padStart(2, '0');
+            const m = date.getMinutes().toString().padStart(2, '0');
+            return `${h}:${m}`;
+        }
+
+        function translateStageName(rawName) {
+            if (!rawName) return '';
+            return STAGE_TRANSLATIONS[rawName] || rawName;
+        }
+
+        async function fetchSchedule() {
+            const icon = document.getElementById('refresh-icon');
+            if (icon) icon.classList.add('fa-spin');
+
+            try {
+                const res = await fetch('https://splatoon3.ink/data/schedules.json');
+                if (!res.ok) throw new Error('splatoon3.ink fetch failed');
+                const json = await res.json();
+                
+                const xSchedules = json.data?.xSchedules?.nodes || [];
+                if (xSchedules.length > 0) {
+                    const currentMatch = xSchedules[0];
+                    const settings = currentMatch.xMatchSetting;
+                    
+                    if (settings) {
+                        const ruleRaw = settings.vsRule?.name || 'Splat Zones';
+                        const ruleName = RULE_TRANSLATIONS[ruleRaw] || settings.vsRule?.name || 'ガチエリア';
+                        
+                        const stages = (settings.vsStages || []).map(stg => ({
+                            name: translateStageName(stg.name),
+                            image: stg.image?.url || ''
+                        }));
+
+                        currentScheduleData = {
+                            ruleName: ruleName,
+                            stages: stages,
+                            startTime: formatIsoTime(currentMatch.startTime),
+                            endTime: formatIsoTime(currentMatch.endTime)
+                        };
+                        
+                        renderSchedule();
+                        return;
+                    }
+                }
+                throw new Error('Schedules format invalid');
+            } catch (err) {
+                console.warn('Primary API error, trying backup API', err);
+                fetchBackupSchedule();
+            } finally {
+                if (icon) icon.classList.remove('fa-spin');
+            }
+        }
+
+        async function fetchBackupSchedule() {
+            try {
+                const res = await fetch('https://spla2.yuu26.com/3/x/now');
+                if (!res.ok) throw new Error('Backup API error');
+                const data = await res.json();
+                
+                if (data.results && data.results.length > 0) {
+                    const activeMatch = data.results[0];
+                    const stages = (activeMatch.stages || []).map(stg => ({
+                        name: translateStageName(stg.name),
+                        image: stg.image || stg.image_url || ''
+                    }));
+                    
+                    currentScheduleData = {
+                        ruleName: activeMatch.rule?.name || activeMatch.rule || 'ガチエリア',
+                        stages: stages.length > 0 ? stages : [{ name: 'ユノハナ大渓谷' }, { name: 'コンブトラック' }],
+                        startTime: activeMatch.start_time ? activeMatch.start_time.split(' ')[1]?.substring(0, 5) : '',
+                        endTime: activeMatch.end_time ? activeMatch.end_time.split(' ')[1]?.substring(0, 5) : ''
+                    };
+                    renderSchedule();
+                    return;
+                }
+            } catch (err) {
+                console.warn('Backup API failed, using default state', err);
+            }
+            useFallbackSchedule();
+        }
+
+        function useFallbackSchedule() {
+            const now = new Date();
+            let hour = now.getHours();
+            const startHour = (hour % 2 === 1) ? hour : hour - 1;
+            const endHour = (startHour + 2) % 24;
+            const formatHour = (h) => (h < 0 ? h + 24 : h).toString().padStart(2, '0');
+
+            currentScheduleData = {
+                ruleName: RULES.AREA,
+                stages: [{ name: "ユノハナ大渓谷" }, { name: "コンブトラック" }],
+                startTime: `${formatHour(startHour)}:00`,
+                endTime: `${formatHour(endHour)}:00`
+            };
+            renderSchedule();
+        }
+
+        function getRuleKeyByName(name) {
+            for (let [key, val] of Object.entries(RULES)) {
+                if (val === name) return key;
+            }
+            return 'AREA';
+        }
+
+        function renderSchedule() {
+            if (!currentScheduleData) return;
+
+            const listContainer = document.getElementById('current-schedules-list');
+            listContainer.innerHTML = '';
+
+            const ruleName = currentScheduleData.ruleName || 'ガチエリア';
+            const ruleKey = getRuleKeyByName(ruleName);
+            const stageObjs = currentScheduleData.stages || [];
+
+            if (currentScheduleData.startTime && currentScheduleData.endTime) {
+                document.getElementById('current-time-slot').textContent = `${currentScheduleData.startTime} ~ ${currentScheduleData.endTime}`;
+            }
+
+            const currentWeaponName = weapons[selectedWeaponIndex] || `ブキ${selectedWeaponIndex + 1}`;
+            const activeWeaponRatings = (userRatings[selectedWeaponIndex] && userRatings[selectedWeaponIndex][ruleKey]) ? userRatings[selectedWeaponIndex][ruleKey] : {};
+
+            let stageCardsHtml = '';
+
+            stageObjs.forEach(stg => {
+                const stgName = translateStageName(stg.name);
+                const stageMeta = STAGES.find(s => s.name === stgName) || { name: stgName };
+                const apiImage = stg.image || stg.image_url || '';
+                
+                const rating = activeWeaponRatings[stgName] || activeWeaponRatings[stageMeta.name] || 'B';
+                const ratingBadgeColor = RATING_COLORS[rating] || 'bg-slate-700';
+
+                stageCardsHtml += `
+                    <div>
+                        ${getStageImageHtml(stageMeta, apiImage, stgName, rating, ratingBadgeColor)}
+                    </div>
+                `;
+            });
+
+            const matchCard = document.createElement('div');
+            matchCard.className = 'space-y-3';
+            matchCard.innerHTML = `
+                <div class="flex justify-between items-center px-1">
+                    <span class="text-xs font-black tracking-wider uppercase px-3 py-1 rounded-lg bg-splat-purple text-white shadow-sm">
+                        ${ruleName}
+                    </span>
+                    <span class="text-xs font-bold text-slate-400">
+                        【${currentWeaponName}】での評価
+                    </span>
+                </div>
+                <div class="grid grid-cols-1 gap-3">
+                    ${stageCardsHtml}
+                </div>
+            `;
+            listContainer.appendChild(matchCard);
+        }
+
+        function openWeaponManagerModal() {
+            const list = document.getElementById('weapon-inputs-list');
+            list.innerHTML = '';
+
+            for (let i = 0; i < 5; i++) {
+                const val = weapons[i] || '';
+                const item = document.createElement('div');
+                item.className = "flex items-center gap-2";
+                item.innerHTML = `
+                    <span class="text-xs font-bold text-slate-400 w-8">W${i + 1}</span>
+                    <input type="text" id="weapon-input-${i}" value="${val}" placeholder="ブキ名を入力 (例: スプラシューター)" 
+                        class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-splat-yellow">
+                `;
+                list.appendChild(item);
+            }
+
+            document.getElementById('weapon-modal').classList.remove('hidden');
+        }
+
+        function closeWeaponManagerModal() {
+            document.getElementById('weapon-modal').classList.add('hidden');
+        }
+
+        function saveWeapons() {
+            for (let i = 0; i < 5; i++) {
+                const input = document.getElementById(`weapon-input-${i}`);
+                if (input) {
+                    weapons[i] = input.value.trim() || `ブキ${i + 1}`;
+                }
+            }
+            localStorage.setItem('splat3_xmatch_weapons', JSON.stringify(weapons));
+            closeWeaponManagerModal();
+            renderWeaponTabs();
+            renderSchedule();
+            showToast('ブキ設定を保存しました');
+        }
+
+        function openSettingsModal() {
+            selectedSettingsWeaponIdx = selectedWeaponIndex;
+            renderSettingsWeaponTabs();
+            document.getElementById('settings-modal').classList.remove('hidden');
+            renderSettingsStageList();
+        }
+
+        function closeSettingsModal() {
+            // モーダルを閉じる際、変更がまだ保存されていなければ自動セーブを走らせる
+            saveRatings();
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function renderSettingsWeaponTabs() {
+            const container = document.getElementById('settings-weapon-tabs');
+            container.innerHTML = '';
+
+            weapons.forEach((wName, idx) => {
+                const isSelected = idx === selectedSettingsWeaponIdx;
+                const btn = document.createElement('button');
+                btn.onclick = () => {
+                    selectedSettingsWeaponIdx = idx;
+                    renderSettingsWeaponTabs();
+                    renderSettingsStageList();
+                };
+                btn.className = `py-1.5 px-1 rounded-lg text-[10px] font-bold truncate transition ${
+                    isSelected ? 'bg-splat-yellow text-slate-950 font-black' : 'text-slate-400 hover:text-slate-200'
+                }`;
+                btn.textContent = wName || `W${idx + 1}`;
+                container.appendChild(btn);
+            });
+        }
+
+        function selectSettingsRule(ruleKey) {
+            selectedSettingsRule = ruleKey;
+            
+            document.querySelectorAll('#rule-selector-buttons button').forEach(btn => {
+                if (btn.dataset.rule === ruleKey) {
+                    btn.className = "rule-btn py-2 text-xs font-bold rounded-lg bg-splat-yellow text-slate-900";
+                } else {
+                    btn.className = "rule-btn py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-300";
+                }
+            });
+
+            renderSettingsStageList();
+        }
+
+        function renderSettingsStageList() {
+            const list = document.getElementById('stage-rating-list');
+            list.innerHTML = '';
+
+            const activeWeaponRatings = (userRatings[selectedSettingsWeaponIdx] && userRatings[selectedSettingsWeaponIdx][selectedSettingsRule]) ? userRatings[selectedSettingsWeaponIdx][selectedSettingsRule] : {};
+
+            STAGES.forEach(stg => {
+                const currentRating = activeWeaponRatings[stg.name] || 'B';
+                const row = document.createElement('div');
+                row.className = "p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 space-y-2";
+                
+                row.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-gradient-to-r ${stg.color}"></span>
+                            <span class="text-xs font-bold text-slate-200">${stg.name}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400">現在: <strong id="rating-label-${stg.name}" class="text-white">${currentRating}</strong></span>
+                    </div>
+                    <div class="flex justify-between gap-1">
+                        ${['S', 'A', 'B', 'C', 'D', 'F'].map(tier => `
+                            <button onclick="setStageRating(${selectedSettingsWeaponIdx}, '${selectedSettingsRule}', '${stg.name}', '${tier}')" 
+                                class="tier-btn-${stg.name}-${tier} flex-1 py-1.5 rounded-lg text-xs font-black transition ${currentRating === tier ? (RATING_COLORS[tier] + ' ring-2 ring-white scale-105') : 'bg-slate-700/80 text-slate-400 hover:bg-slate-600'}">
+                                ${tier}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function setStageRating(wIdx, rule, stageName, tier) {
+            if (!userRatings[wIdx]) userRatings[wIdx] = {};
+            if (!userRatings[wIdx][rule]) userRatings[wIdx][rule] = {};
+            userRatings[wIdx][rule][stageName] = tier;
+            
+            // 即座にストレージに保存＆UI更新
+            saveRatingsToStorage();
+            
+            // 該当項目の見た目（ボタンの色や「現在: S」等の文字）を即時反映
+            const label = document.getElementById(`rating-label-${stageName}`);
+            if (label) label.textContent = tier;
+
+            ['S', 'A', 'B', 'C', 'D', 'F'].forEach(t => {
+                const btn = document.querySelector(`.tier-btn-${stageName}-${t}`);
+                if (btn) {
+                    if (t === tier) {
+                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-1.5 rounded-lg text-xs font-black transition ${RATING_COLORS[t]} ring-2 ring-white scale-105`;
+                    } else {
+                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-1.5 rounded-lg text-xs font-black transition bg-slate-700/80 text-slate-400 hover:bg-slate-600`;
+                    }
+                }
+            });
+
+            // トップ画面もリアルタイムで更新
+            renderSchedule();
+        }
+
+        function saveRatings() {
+            saveRatingsToStorage();
+            selectedWeaponIndex = selectedSettingsWeaponIdx;
+            localStorage.setItem('splat3_selected_weapon_idx', selectedWeaponIndex.toString());
+            
+            renderWeaponTabs();
+            renderSchedule();
+            
+            const wName = weapons[selectedWeaponIndex] || `W${selectedWeaponIndex + 1}`;
+            showToast(`【${wName}】の評価を保存しました！`);
+        }
+
+        window.onload = function() {
+            initRatings();
+            renderWeaponTabs();
+            fetchSchedule();
+        };
+    </script>
+</body>
+</html>
