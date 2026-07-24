@@ -69,7 +69,7 @@
         <section class="space-y-3">
             <div class="flex justify-between items-center px-1">
                 <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fa-solid fa-gamepad text-splat-yellow"></i> 現在開催中のステージ (アロワナ)
+                    <i class="fa-solid fa-gamepad text-splat-yellow"></i> 現在開催中のステージ
                 </h2>
                 <div class="text-[10px] text-slate-400 font-medium">
                     時間: <span id="current-time-slot" class="font-bold text-slate-200">--:-- ~ --:--</span>
@@ -151,10 +151,10 @@
 
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-300">各ステージの評価 (S〜F)</span>
+                        <span class="text-xs font-bold text-slate-300">各ステージの評価</span>
                         <span class="text-[10px] text-slate-500">タップで即時反映されます</span>
                     </div>
-                    <div id="stage-rating-list" class="space-y-2.5">
+                    <div id="stage-rating-list" class="space-y-3">
                         <!-- Dynamic Stage Items -->
                     </div>
                 </div>
@@ -193,9 +193,9 @@
             "Museum d'Alfonsino": 'キンメダイ美術館',
             'Mahi-Mahi Resort': 'マヒマヒリゾート＆スパ',
             'Inkblot Art Academy': '海女美術大学',
-            'Sturgeon Shipyard': 'チョウザメ船ドック',
+            'Sturgeon Shipyard': 'チョウザメ造船',
             'MakoMart': 'ザトウマーケット',
-            'Wahoo World': 'ヤシガニ造船',
+            'Wahoo World': 'スメーシーワールド',
             'Flounder Heights': 'ヒラメが丘団地',
             'Brinewater Springs': 'クサヤ温泉',
             "Um'ami Ruins": 'ナンプラー遺跡',
@@ -206,13 +206,9 @@
             'Shipshape Cargo Co.': 'オヒョウ海運',
             'Robo ROM-en': 'バイガイ亭',
             'Bluefin Depot': 'ネギトロ炭鉱',
+            'Marlin Airport': 'カジキ空港',
             'Lemuria Hub': 'リュウグウターミナル',
-            'Urchin Underpass': 'デカライン高架下',
-            'Marlin Airport': 'カジキ空港'
-        };
-
-        const RATING_SCORES = {
-            'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1, 'F': 0
+            'Urchin Underpass': 'デカライン高架下'
         };
 
         const RATING_COLORS = {
@@ -224,32 +220,33 @@
             'F': 'bg-purple-900 text-purple-200'
         };
 
+        // ご指定いただいた完全版紐付けデータ（番号.png と ステージ名）
         const STAGES = [
-            { name: "ユノハナ大渓谷", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/d7a46fa7dfa74e50d5ec42d45b5cc45426d03d36_0.png", color: "from-amber-700 to-amber-950" },
-            { name: "ゴンズイ地区", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/318efee0b59f37ef602280d9bc3be9a296d9e0dd_0.png", color: "from-slate-700 to-indigo-950" },
-            { name: "ヤガラ市場", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/d9f365d5dfa74e50d5ec42d45b5cc45426d03d36_0.png", color: "from-orange-700 to-amber-950" },
-            { name: "マテガイ放水路", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/b3a1a45d064cfb159f8c148e65ec8d844cfa068e_0.png", color: "from-blue-800 to-slate-950" },
-            { name: "ナメロウ金属", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/6221d60b57731d102e3dc412b1a3d0774df1cf40_0.png", color: "from-zinc-700 to-slate-950" },
-            { name: "ヤシガニ造船", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/26a644e59f27110e53a33303f9dc6e8d1591f862_0.png", color: "from-cyan-800 to-slate-950" },
-            { name: "マサバ海峡大橋", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/b2ffed9f30b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-sky-700 to-blue-950" },
-            { name: "キンメダイ美術館", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/a1458e0a30b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-purple-800 to-slate-950" },
-            { name: "マヒマヒリゾート＆スパ", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/f1d643d930b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-teal-600 to-cyan-950" },
-            { name: "海女美術大学", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/0812981330b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-rose-800 to-slate-950" },
-            { name: "チョウザメ船ドック", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/48bf813430b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-yellow-800 to-slate-950" },
-            { name: "ザトウマーケット", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/229a43a030b2c12d216f40b074ec6f555bc6fbb9_0.png", color: "from-emerald-800 to-slate-950" },
-            { name: "ヒラメが丘団地", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/88c691f1a54b383eb893aa5b4e1564ea07d0f983_0.png", color: "from-orange-800 to-slate-950" },
-            { name: "クサヤ温泉", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/cd423ef81f21d3f57c5a08dbcd22bcf7471be851_0.png", color: "from-red-800 to-slate-950" },
-            { name: "ナンプラー遺跡", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/59e66ffebaf101b02d64a0cd9103c2005c242c7e_0.png", color: "from-amber-800 to-stone-950" },
-            { name: "タラポートショッピングパーク", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/432a688a25ed5bc59599d14691763a8a044db9b5_0.png", color: "from-indigo-700 to-slate-950" },
-            { name: "コンブトラック", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/67ea64ffbe2cd1faef09e99a80eef671a54b383e_0.png", color: "from-lime-800 to-slate-950" },
-            { name: "マンタマリア号", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/6232230a84dfa18cf526fb3bf1a980dd280e2f5f_0.png", color: "from-blue-700 to-indigo-950" },
-            { name: "タカアシ経済特区", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/f38210cd4ec70449cf8fdfa0fa3d00adffbe0a68_0.png", color: "from-violet-800 to-slate-950" },
-            { name: "オヒョウ海運", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/0d2c0b6b0c2a233b87cfbe2010bfbe51c6c51a37_0.png", color: "from-sky-800 to-slate-950" },
-            { name: "バイガイ亭", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/7e2c90e0b3c22a7fbe8a5d2a93fb54228ec5613a_0.png", color: "from-amber-700 to-slate-950" },
-            { name: "ネギトロ炭鉱", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/2660a5f979fe7b7be6476e33f389ea1a3edecffc_0.png", color: "from-stone-700 to-slate-950" },
-            { name: "リュウグウターミナル", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/7a6bfef6484e037ee41f714eb6c611f7c0066b59_0.png", color: "from-fuchsia-800 to-slate-950" },
-            { name: "デカライン高架下", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/98e53030654e4ce2aeca98e53030654e4ce2aeca_0.png", color: "from-teal-700 to-slate-950" },
-            { name: "カジキ空港", img: "https://splatoon3.ink/assets/splatnet/v2/stage_img/icon/high_resolution/054e20fa499c894fb21fae5dbd9667746cbbf3a4_0.png", color: "from-cyan-700 to-blue-950" }
+            { name: "ユノハナ大渓谷", img: "https://supergomibako.com/tool/spla/stage_img_org/1.png", color: "from-amber-700 to-amber-950" },
+            { name: "ゴンズイ地区", img: "https://supergomibako.com/tool/spla/stage_img_org/2.png", color: "from-slate-700 to-indigo-950" },
+            { name: "ヤガラ市場", img: "https://supergomibako.com/tool/spla/stage_img_org/3.png", color: "from-orange-700 to-amber-950" },
+            { name: "マテガイ放水路", img: "https://supergomibako.com/tool/spla/stage_img_org/4.png", color: "from-blue-800 to-slate-950" },
+            { name: "ナンプラー遺跡", img: "https://supergomibako.com/tool/spla/stage_img_org/5.png", color: "from-amber-800 to-stone-950" },
+            { name: "ナメロウ金属", img: "https://supergomibako.com/tool/spla/stage_img_org/6.png", color: "from-zinc-700 to-slate-950" },
+            { name: "クサヤ温泉", img: "https://supergomibako.com/tool/spla/stage_img_org/7.png", color: "from-cyan-800 to-slate-950" },
+            { name: "タラポートショッピングパーク", img: "https://supergomibako.com/tool/spla/stage_img_org/8.png", color: "from-sky-700 to-blue-950" },
+            { name: "ヒラメが丘団地", img: "https://supergomibako.com/tool/spla/stage_img_org/9.png", color: "from-purple-800 to-slate-950" },
+            { name: "マサバ海峡大橋", img: "https://supergomibako.com/tool/spla/stage_img_org/10.png", color: "from-teal-600 to-cyan-950" },
+            { name: "キンメダイ美術館", img: "https://supergomibako.com/tool/spla/stage_img_org/11.png", color: "from-rose-800 to-slate-950" },
+            { name: "マヒマヒリゾート＆スパ", img: "https://supergomibako.com/tool/spla/stage_img_org/12.png", color: "from-yellow-800 to-slate-950" },
+            { name: "海女美術大学", img: "https://supergomibako.com/tool/spla/stage_img_org/13.png", color: "from-emerald-800 to-slate-950" },
+            { name: "チョウザメ造船", img: "https://supergomibako.com/tool/spla/stage_img_org/14.png", color: "from-orange-800 to-slate-950" },
+            { name: "ザトウマーケット", img: "https://supergomibako.com/tool/spla/stage_img_org/15.png", color: "from-red-800 to-slate-950" },
+            { name: "スメーシーワールド", img: "https://supergomibako.com/tool/spla/stage_img_org/16.png", color: "from-indigo-700 to-slate-950" },
+            { name: "コンブトラック", img: "https://supergomibako.com/tool/spla/stage_img_org/17.png", color: "from-lime-800 to-slate-950" },
+            { name: "マンタマリア号", img: "https://supergomibako.com/tool/spla/stage_img_org/18.png", color: "from-blue-700 to-indigo-950" },
+            { name: "タカアシ経済特区", img: "https://supergomibako.com/tool/spla/stage_img_org/19.png", color: "from-violet-800 to-slate-950" },
+            { name: "オヒョウ海運", img: "https://supergomibako.com/tool/spla/stage_img_org/20.png", color: "from-sky-800 to-slate-950" },
+            { name: "バイガイ亭", img: "https://supergomibako.com/tool/spla/stage_img_org/21.png", color: "from-amber-700 to-slate-950" },
+            { name: "ネギトロ炭鉱", img: "https://supergomibako.com/tool/spla/stage_img_org/22.png", color: "from-stone-700 to-slate-950" },
+            { name: "カジキ空港", img: "https://supergomibako.com/tool/spla/stage_img_org/23.png", color: "from-cyan-700 to-blue-950" },
+            { name: "リュウグウターミナル", img: "https://supergomibako.com/tool/spla/stage_img_org/24.png", color: "from-fuchsia-800 to-slate-950" },
+            { name: "デカライン高架下", img: "https://supergomibako.com/tool/spla/stage_img_org/26.png", color: "from-teal-700 to-slate-950" }
         ];
 
         let weapons = JSON.parse(localStorage.getItem('splat3_xmatch_weapons') || '["スプラシューター", "52ガロン", "ロングブラスター", "ボトルガイザー", "ジムワイパー"]');
@@ -332,25 +329,16 @@
             renderSchedule();
         }
 
+        // TOP画面用の画像カード描画
         function renderVisualFallbackCard(stageName, colorGradient, rating, ratingBadgeColor) {
             return `
                 <div class="w-full h-36 sm:h-40 rounded-2xl relative overflow-hidden bg-gradient-to-br ${colorGradient || 'from-slate-800 to-slate-950'} border border-white/10 shadow-lg flex items-center justify-center">
-                    <svg class="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <path d="0,30 Q40,60 100,20 L100,100 L0,100 Z" fill="currentColor" class="text-slate-950"></path>
-                        <circle cx="80" cy="30" r="15" fill="currentColor" class="text-white/20"></circle>
-                    </svg>
-
                     <div class="absolute bottom-3 left-3 z-20 pointer-events-none">
-                        <span class="text-white font-black text-sm sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">
-                            ${stageName}
-                        </span>
+                        <span class="text-white font-black text-sm sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">${stageName}</span>
                     </div>
-                    
                     <div class="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 shadow-lg pointer-events-none">
                         <span class="text-[10px] text-slate-300 font-bold">評価</span>
-                        <span class="w-7 h-7 rounded-lg ${ratingBadgeColor} flex items-center justify-center font-black text-sm shadow">
-                            ${rating}
-                        </span>
+                        <span class="w-7 h-7 rounded-lg ${ratingBadgeColor} flex items-center justify-center font-black text-sm shadow">${rating}</span>
                     </div>
                 </div>
             `;
@@ -366,29 +354,36 @@
             const colorGradient = stageMeta?.color || 'from-slate-800 to-slate-950';
             const targetUrl = directApiImage || stageMeta?.img || '';
 
-            if (!targetUrl) {
-                return renderVisualFallbackCard(stageName, colorGradient, rating, ratingBadgeColor);
-            }
-
             return `
                 <div class="w-full h-36 sm:h-40 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
-                    <img src="${targetUrl}" alt="${stageName}" 
+                    <img src="${targetUrl}" alt="" 
                          onerror="handleImageError(this, '${colorGradient}', '${stageName}', '${rating}', '${ratingBadgeColor}');"
                          class="w-full h-full object-cover brightness-95 hover:scale-105 transition duration-300" />
-                    
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-transparent pointer-events-none"></div>
-
                     <div class="absolute bottom-3 left-3 z-20 pointer-events-none">
-                        <span class="text-white font-black text-sm sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">
-                            ${stageName}
-                        </span>
+                        <span class="text-white font-black text-sm sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">${stageName}</span>
                     </div>
-
                     <div class="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/15 shadow-xl pointer-events-none">
                         <span class="text-[10px] text-slate-300 font-bold">評価</span>
-                        <span class="w-7 h-7 rounded-lg ${ratingBadgeColor} flex items-center justify-center font-black text-sm shadow">
-                            ${rating}
-                        </span>
+                        <span class="w-7 h-7 rounded-lg ${ratingBadgeColor} flex items-center justify-center font-black text-sm shadow">${rating}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 設定画面用ミニカード（左上のステージ名なし、左下に配置、固定URLを利用）
+        function getSettingsStageImageHtml(stageMeta, stageName) {
+            const colorGradient = stageMeta?.color || 'from-slate-800 to-slate-950';
+            const targetUrl = stageMeta?.img || '';
+
+            return `
+                <div class="w-full h-24 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
+                    <img src="${targetUrl}" alt="" 
+                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-24 rounded-2xl bg-gradient-to-br ${colorGradient} flex items-end p-3 relative overflow-hidden\'><div class=\'absolute bottom-2.5 left-3 z-20\'><span class=\'text-white font-black text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]\'>${stageName}</span></div></div>';"
+                         class="w-full h-full object-cover brightness-95" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none"></div>
+                    <div class="absolute bottom-2.5 left-3 z-20 pointer-events-none">
+                        <span class="text-white font-black text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">${stageName}</span>
                     </div>
                 </div>
             `;
@@ -425,10 +420,14 @@
                         const ruleRaw = settings.vsRule?.name || 'Splat Zones';
                         const ruleName = RULE_TRANSLATIONS[ruleRaw] || settings.vsRule?.name || 'ガチエリア';
                         
-                        const stages = (settings.vsStages || []).map(stg => ({
-                            name: translateStageName(stg.name),
-                            image: stg.image?.url || ''
-                        }));
+                        const stages = (settings.vsStages || []).map(stg => {
+                            const translatedName = translateStageName(stg.name);
+                            const foundMeta = STAGES.find(s => s.name === translatedName);
+                            return {
+                                name: translatedName,
+                                image: foundMeta?.img || ''
+                            };
+                        });
 
                         currentScheduleData = {
                             ruleName: ruleName,
@@ -458,14 +457,18 @@
                 
                 if (data.results && data.results.length > 0) {
                     const activeMatch = data.results[0];
-                    const stages = (activeMatch.stages || []).map(stg => ({
-                        name: translateStageName(stg.name),
-                        image: stg.image || stg.image_url || ''
-                    }));
+                    const stages = (activeMatch.stages || []).map(stg => {
+                        const translatedName = translateStageName(stg.name);
+                        const foundMeta = STAGES.find(s => s.name === translatedName);
+                        return {
+                            name: translatedName,
+                            image: foundMeta?.img || ''
+                        };
+                    });
                     
                     currentScheduleData = {
                         ruleName: activeMatch.rule?.name || activeMatch.rule || 'ガチエリア',
-                        stages: stages.length > 0 ? stages : [{ name: 'ユノハナ大渓谷' }, { name: 'コンブトラック' }],
+                        stages: stages.length > 0 ? stages : [{ name: 'ユノハナ大渓谷', image: STAGES[0].img }, { name: 'コンブトラック', image: STAGES[16].img }],
                         startTime: activeMatch.start_time ? activeMatch.start_time.split(' ')[1]?.substring(0, 5) : '',
                         endTime: activeMatch.end_time ? activeMatch.end_time.split(' ')[1]?.substring(0, 5) : ''
                     };
@@ -487,7 +490,7 @@
 
             currentScheduleData = {
                 ruleName: RULES.AREA,
-                stages: [{ name: "ユノハナ大渓谷" }, { name: "コンブトラック" }],
+                stages: [{ name: "ユノハナ大渓谷", image: STAGES[0].img }, { name: "コンブトラック", image: STAGES[16].img }],
                 startTime: `${formatHour(startHour)}:00`,
                 endTime: `${formatHour(endHour)}:00`
             };
@@ -523,7 +526,7 @@
             stageObjs.forEach(stg => {
                 const stgName = translateStageName(stg.name);
                 const stageMeta = STAGES.find(s => s.name === stgName) || { name: stgName };
-                const apiImage = stg.image || stg.image_url || '';
+                const apiImage = stg.image || stageMeta.img || '';
                 
                 const rating = activeWeaponRatings[stgName] || activeWeaponRatings[stageMeta.name] || 'B';
                 const ratingBadgeColor = RATING_COLORS[rating] || 'bg-slate-700';
@@ -598,7 +601,6 @@
         }
 
         function closeSettingsModal() {
-            // モーダルを閉じる際、変更がまだ保存されていなければ自動セーブを走らせる
             saveRatings();
             document.getElementById('settings-modal').classList.add('hidden');
         }
@@ -646,20 +648,18 @@
             STAGES.forEach(stg => {
                 const currentRating = activeWeaponRatings[stg.name] || 'B';
                 const row = document.createElement('div');
-                row.className = "p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 space-y-2";
+                row.className = "p-3 rounded-2xl bg-slate-800/90 border border-slate-700/80 space-y-2.5 shadow-lg";
                 
+                const stageBannerHtml = getSettingsStageImageHtml(stg, stg.name);
+
                 row.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-gradient-to-r ${stg.color}"></span>
-                            <span class="text-xs font-bold text-slate-200">${stg.name}</span>
-                        </div>
-                        <span class="text-[10px] text-slate-400">現在: <strong id="rating-label-${stg.name}" class="text-white">${currentRating}</strong></span>
+                    <div class="relative">
+                        ${stageBannerHtml}
                     </div>
-                    <div class="flex justify-between gap-1">
+                    <div class="flex justify-between gap-1 pt-1">
                         ${['S', 'A', 'B', 'C', 'D', 'F'].map(tier => `
                             <button onclick="setStageRating(${selectedSettingsWeaponIdx}, '${selectedSettingsRule}', '${stg.name}', '${tier}')" 
-                                class="tier-btn-${stg.name}-${tier} flex-1 py-1.5 rounded-lg text-xs font-black transition ${currentRating === tier ? (RATING_COLORS[tier] + ' ring-2 ring-white scale-105') : 'bg-slate-700/80 text-slate-400 hover:bg-slate-600'}">
+                                class="tier-btn-${stg.name}-${tier} flex-1 py-2 rounded-xl text-xs font-black transition ${currentRating === tier ? (RATING_COLORS[tier] + ' ring-2 ring-white scale-105 shadow-md') : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600'}">
                                 ${tier}
                             </button>
                         `).join('')}
@@ -674,25 +674,19 @@
             if (!userRatings[wIdx][rule]) userRatings[wIdx][rule] = {};
             userRatings[wIdx][rule][stageName] = tier;
             
-            // 即座にストレージに保存＆UI更新
             saveRatingsToStorage();
-            
-            // 該当項目の見た目（ボタンの色や「現在: S」等の文字）を即時反映
-            const label = document.getElementById(`rating-label-${stageName}`);
-            if (label) label.textContent = tier;
 
             ['S', 'A', 'B', 'C', 'D', 'F'].forEach(t => {
                 const btn = document.querySelector(`.tier-btn-${stageName}-${t}`);
                 if (btn) {
                     if (t === tier) {
-                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-1.5 rounded-lg text-xs font-black transition ${RATING_COLORS[t]} ring-2 ring-white scale-105`;
+                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-2 rounded-xl text-xs font-black transition ${RATING_COLORS[t]} ring-2 ring-white scale-105 shadow-md`;
                     } else {
-                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-1.5 rounded-lg text-xs font-black transition bg-slate-700/80 text-slate-400 hover:bg-slate-600`;
+                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-2 rounded-xl text-xs font-black transition bg-slate-700/80 text-slate-300 hover:bg-slate-600`;
                     }
                 }
             });
 
-            // トップ画面もリアルタイムで更新
             renderSchedule();
         }
 
@@ -703,9 +697,6 @@
             
             renderWeaponTabs();
             renderSchedule();
-            
-            const wName = weapons[selectedWeaponIndex] || `W${selectedWeaponIndex + 1}`;
-            showToast(`【${wName}】の評価を保存しました！`);
         }
 
         window.onload = function() {
@@ -716,3 +707,4 @@
     </script>
 </body>
 </html>
+
