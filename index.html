@@ -69,15 +69,12 @@
         <section class="space-y-3">
             <div class="flex justify-between items-center px-1">
                 <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fa-solid fa-gamepad text-splat-yellow"></i> 現在開催中のステージ
+                    <i class="fa-solid fa-gamepad text-splat-yellow"></i> スケジュール一覧
                 </h2>
-                <div class="text-[10px] text-slate-400 font-medium">
-                    時間: <span id="current-time-slot" class="font-bold text-slate-200">--:-- ~ --:--</span>
-                </div>
             </div>
 
-            <!-- Current Matches Stage Cards Container -->
-            <div id="current-schedules-list" class="space-y-4">
+            <!-- Current & Next Matches Container -->
+            <div id="current-schedules-list" class="space-y-6">
                 <!-- Dynamic Stage Cards -->
             </div>
         </section>
@@ -130,8 +127,7 @@
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4 space-y-5">
-                
+            <div class="flex-1 overflow-y-auto p-4 space-y-5 pb-8">
                 <div>
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">評価するブキを選択</label>
                     <div id="settings-weapon-tabs" class="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
@@ -158,12 +154,6 @@
                         <!-- Dynamic Stage Items -->
                     </div>
                 </div>
-            </div>
-
-            <div class="p-4 border-t border-slate-800 bg-slate-900/90">
-                <button onclick="saveRatings()" class="w-full py-3 bg-splat-yellow text-slate-950 font-extrabold rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition">
-                    評価を保存して閉じる
-                </button>
             </div>
         </div>
     </div>
@@ -220,7 +210,6 @@
             'F': 'bg-purple-900 text-purple-200'
         };
 
-        // ご指定いただいた完全版紐付けデータ（番号.png と ステージ名）
         const STAGES = [
             { name: "ユノハナ大渓谷", img: "https://supergomibako.com/tool/spla/stage_img_org/1.png", color: "from-amber-700 to-amber-950" },
             { name: "ゴンズイ地区", img: "https://supergomibako.com/tool/spla/stage_img_org/2.png", color: "from-slate-700 to-indigo-950" },
@@ -253,7 +242,7 @@
         let selectedWeaponIndex = parseInt(localStorage.getItem('splat3_selected_weapon_idx') || '0');
         let userRatings = JSON.parse(localStorage.getItem('splat3_xmatch_weapon_ratings') || '{}');
 
-        let currentScheduleData = null;
+        let schedulesList = [];
         let selectedSettingsRule = 'AREA';
         let selectedSettingsWeaponIdx = 0;
 
@@ -326,19 +315,19 @@
             selectedWeaponIndex = idx;
             localStorage.setItem('splat3_selected_weapon_idx', idx.toString());
             renderWeaponTabs();
-            renderSchedule();
+            renderSchedules();
         }
 
-        // TOP画面用の画像カード描画
         function renderVisualFallbackCard(stageName, colorGradient, rating, ratingBadgeColor) {
             return `
-                <div class="w-full h-36 sm:h-40 rounded-2xl relative overflow-hidden bg-gradient-to-br ${colorGradient || 'from-slate-800 to-slate-950'} border border-white/10 shadow-lg flex items-center justify-center">
-                    <div class="absolute bottom-3 left-3 z-20 pointer-events-none">
-                        <span class="text-white font-black text-sm sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">${stageName}</span>
+                <div class="w-full h-32 rounded-2xl relative overflow-hidden bg-gradient-to-br ${colorGradient || 'from-slate-800 to-slate-950'} border border-white/10 shadow-lg flex items-center justify-center">
+                    <div class="absolute bottom-2 left-2 z-20 pointer-events-none pr-10">
+                        <span class="text-white font-black text-xs sm:text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-tight block truncate">${stageName}</span>
                     </div>
-                    <div class="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 shadow-lg pointer-events-none">
-                        <span class="text-[10px] text-slate-300 font-bold">評価</span>
-                        <span class="w-7 h-7 rounded-lg ${ratingBadgeColor} flex items-center justify-center font-black text-sm shadow">${rating}</span>
+                    <!-- 評価枠を画像内右上に設置 -->
+                    <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/10 shadow pointer-events-none">
+                        <span class="text-[9px] text-slate-300 font-bold">評価</span>
+                        <span class="w-6 h-6 rounded-md ${ratingBadgeColor} flex items-center justify-center font-black text-xs shadow">${rating}</span>
                     </div>
                 </div>
             `;
@@ -355,23 +344,23 @@
             const targetUrl = directApiImage || stageMeta?.img || '';
 
             return `
-                <div class="w-full h-36 sm:h-40 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
+                <div class="w-full h-32 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
                     <img src="${targetUrl}" alt="" 
                          onerror="handleImageError(this, '${colorGradient}', '${stageName}', '${rating}', '${ratingBadgeColor}');"
                          class="w-full h-full object-cover brightness-95 hover:scale-105 transition duration-300" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-transparent pointer-events-none"></div>
-                    <div class="absolute bottom-3 left-3 z-20 pointer-events-none">
-                        <span class="text-white font-black text-sm sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">${stageName}</span>
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent pointer-events-none"></div>
+                    <div class="absolute bottom-2 left-2 z-20 pointer-events-none pr-2">
+                        <span class="text-white font-black text-xs sm:text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-tight block truncate">${stageName}</span>
                     </div>
-                    <div class="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/15 shadow-xl pointer-events-none">
-                        <span class="text-[10px] text-slate-300 font-bold">評価</span>
-                        <span class="w-7 h-7 rounded-lg ${ratingBadgeColor} flex items-center justify-center font-black text-sm shadow">${rating}</span>
+                    <!-- 評価枠を画像内右上に完全に配置 -->
+                    <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/15 shadow-xl pointer-events-none">
+                        <span class="text-[9px] text-slate-300 font-bold">評価</span>
+                        <span class="w-6 h-6 rounded-md ${ratingBadgeColor} flex items-center justify-center font-black text-xs shadow">${rating}</span>
                     </div>
                 </div>
             `;
         }
 
-        // 設定画面用ミニカード（左上のステージ名なし、左下に配置、固定URLを利用）
         function getSettingsStageImageHtml(stageMeta, stageName) {
             const colorGradient = stageMeta?.color || 'from-slate-800 to-slate-950';
             const targetUrl = stageMeta?.img || '';
@@ -379,11 +368,11 @@
             return `
                 <div class="w-full h-24 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
                     <img src="${targetUrl}" alt="" 
-                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-24 rounded-2xl bg-gradient-to-br ${colorGradient} flex items-end p-3 relative overflow-hidden\'><div class=\'absolute bottom-2.5 left-3 z-20\'><span class=\'text-white font-black text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]\'>${stageName}</span></div></div>';"
+                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-24 rounded-2xl bg-gradient-to-br ${colorGradient} flex items-end p-3 relative overflow-hidden\'><div class=\'absolute bottom-2.5 left-3 z-20 pr-4\'><span class=\'text-white font-black text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] block truncate\'>${stageName}</span></div></div>';"
                          class="w-full h-full object-cover brightness-95" />
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none"></div>
-                    <div class="absolute bottom-2.5 left-3 z-20 pointer-events-none">
-                        <span class="text-white font-black text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide">${stageName}</span>
+                    <div class="absolute bottom-2.5 left-3 z-20 pointer-events-none pr-4">
+                        <span class="text-white font-black text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide block truncate">${stageName}</span>
                     </div>
                 </div>
             `;
@@ -413,14 +402,12 @@
                 
                 const xSchedules = json.data?.xSchedules?.nodes || [];
                 if (xSchedules.length > 0) {
-                    const currentMatch = xSchedules[0];
-                    const settings = currentMatch.xMatchSetting;
-                    
-                    if (settings) {
-                        const ruleRaw = settings.vsRule?.name || 'Splat Zones';
-                        const ruleName = RULE_TRANSLATIONS[ruleRaw] || settings.vsRule?.name || 'ガチエリア';
+                    schedulesList = xSchedules.slice(0, 3).map((match, idx) => {
+                        const settings = match.xMatchSetting;
+                        const ruleRaw = settings?.vsRule?.name || 'Splat Zones';
+                        const ruleName = RULE_TRANSLATIONS[ruleRaw] || settings?.vsRule?.name || 'ガチエリア';
                         
-                        const stages = (settings.vsStages || []).map(stg => {
+                        const stages = (settings?.vsStages || []).map(stg => {
                             const translatedName = translateStageName(stg.name);
                             const foundMeta = STAGES.find(s => s.name === translatedName);
                             return {
@@ -429,16 +416,22 @@
                             };
                         });
 
-                        currentScheduleData = {
+                        let label = '現在開催中';
+                        if (idx === 1) label = '次のスケジュール';
+                        if (idx === 2) label = '次の次のスケジュール';
+
+                        return {
+                            isCurrent: idx === 0,
+                            label: label,
                             ruleName: ruleName,
                             stages: stages,
-                            startTime: formatIsoTime(currentMatch.startTime),
-                            endTime: formatIsoTime(currentMatch.endTime)
+                            startTime: formatIsoTime(match.startTime),
+                            endTime: formatIsoTime(match.endTime)
                         };
-                        
-                        renderSchedule();
-                        return;
-                    }
+                    });
+
+                    renderSchedules();
+                    return;
                 }
                 throw new Error('Schedules format invalid');
             } catch (err) {
@@ -466,13 +459,15 @@
                         };
                     });
                     
-                    currentScheduleData = {
+                    schedulesList = [{
+                        isCurrent: true,
+                        label: '現在開催中',
                         ruleName: activeMatch.rule?.name || activeMatch.rule || 'ガチエリア',
                         stages: stages.length > 0 ? stages : [{ name: 'ユノハナ大渓谷', image: STAGES[0].img }, { name: 'コンブトラック', image: STAGES[16].img }],
                         startTime: activeMatch.start_time ? activeMatch.start_time.split(' ')[1]?.substring(0, 5) : '',
                         endTime: activeMatch.end_time ? activeMatch.end_time.split(' ')[1]?.substring(0, 5) : ''
-                    };
-                    renderSchedule();
+                    }];
+                    renderSchedules();
                     return;
                 }
             } catch (err) {
@@ -488,13 +483,15 @@
             const endHour = (startHour + 2) % 24;
             const formatHour = (h) => (h < 0 ? h + 24 : h).toString().padStart(2, '0');
 
-            currentScheduleData = {
+            schedulesList = [{
+                isCurrent: true,
+                label: '現在開催中',
                 ruleName: RULES.AREA,
                 stages: [{ name: "ユノハナ大渓谷", image: STAGES[0].img }, { name: "コンブトラック", image: STAGES[16].img }],
                 startTime: `${formatHour(startHour)}:00`,
                 endTime: `${formatHour(endHour)}:00`
-            };
-            renderSchedule();
+            }];
+            renderSchedules();
         }
 
         function getRuleKeyByName(name) {
@@ -504,56 +501,51 @@
             return 'AREA';
         }
 
-        function renderSchedule() {
-            if (!currentScheduleData) return;
-
+        function renderSchedules() {
             const listContainer = document.getElementById('current-schedules-list');
             listContainer.innerHTML = '';
 
-            const ruleName = currentScheduleData.ruleName || 'ガチエリア';
-            const ruleKey = getRuleKeyByName(ruleName);
-            const stageObjs = currentScheduleData.stages || [];
+            schedulesList.forEach((sch) => {
+                const ruleKey = getRuleKeyByName(sch.ruleName);
+                const activeWeaponRatings = (userRatings[selectedWeaponIndex] && userRatings[selectedWeaponIndex][ruleKey]) ? userRatings[selectedWeaponIndex][ruleKey] : {};
 
-            if (currentScheduleData.startTime && currentScheduleData.endTime) {
-                document.getElementById('current-time-slot').textContent = `${currentScheduleData.startTime} ~ ${currentScheduleData.endTime}`;
-            }
+                let stageCardsHtml = '';
+                sch.stages.forEach(stg => {
+                    const stgName = translateStageName(stg.name);
+                    const stageMeta = STAGES.find(s => s.name === stgName) || { name: stgName };
+                    const apiImage = stg.image || stageMeta.img || '';
+                    
+                    const rating = activeWeaponRatings[stgName] || activeWeaponRatings[stageMeta.name] || 'B';
+                    const ratingBadgeColor = RATING_COLORS[rating] || 'bg-slate-700';
 
-            const currentWeaponName = weapons[selectedWeaponIndex] || `ブキ${selectedWeaponIndex + 1}`;
-            const activeWeaponRatings = (userRatings[selectedWeaponIndex] && userRatings[selectedWeaponIndex][ruleKey]) ? userRatings[selectedWeaponIndex][ruleKey] : {};
+                    stageCardsHtml += `
+                        <div>
+                            ${getStageImageHtml(stageMeta, apiImage, stgName, rating, ratingBadgeColor)}
+                        </div>
+                    `;
+                });
 
-            let stageCardsHtml = '';
-
-            stageObjs.forEach(stg => {
-                const stgName = translateStageName(stg.name);
-                const stageMeta = STAGES.find(s => s.name === stgName) || { name: stgName };
-                const apiImage = stg.image || stageMeta.img || '';
-                
-                const rating = activeWeaponRatings[stgName] || activeWeaponRatings[stageMeta.name] || 'B';
-                const ratingBadgeColor = RATING_COLORS[rating] || 'bg-slate-700';
-
-                stageCardsHtml += `
-                    <div>
-                        ${getStageImageHtml(stageMeta, apiImage, stgName, rating, ratingBadgeColor)}
+                const card = document.createElement('div');
+                card.className = `space-y-2 p-3 rounded-3xl ${sch.isCurrent ? 'bg-slate-900/90 border border-slate-800 shadow-xl' : 'bg-slate-950/50 border border-slate-800/60 opacity-90'}`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-center px-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${sch.isCurrent ? 'bg-splat-yellow text-slate-950' : 'bg-slate-800 text-slate-400'}">${sch.label}</span>
+                            <span class="text-xs font-black tracking-wider uppercase px-2.5 py-0.5 rounded-lg bg-splat-purple text-white shadow-sm">
+                                ${sch.ruleName}
+                            </span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 font-medium">
+                            <span class="font-bold text-slate-200">${sch.startTime} ~ ${sch.endTime}</span>
+                        </div>
+                    </div>
+                    <!-- 横並び（2カラム） -->
+                    <div class="grid grid-cols-2 gap-2">
+                        ${stageCardsHtml}
                     </div>
                 `;
+                listContainer.appendChild(card);
             });
-
-            const matchCard = document.createElement('div');
-            matchCard.className = 'space-y-3';
-            matchCard.innerHTML = `
-                <div class="flex justify-between items-center px-1">
-                    <span class="text-xs font-black tracking-wider uppercase px-3 py-1 rounded-lg bg-splat-purple text-white shadow-sm">
-                        ${ruleName}
-                    </span>
-                    <span class="text-xs font-bold text-slate-400">
-                        【${currentWeaponName}】での評価
-                    </span>
-                </div>
-                <div class="grid grid-cols-1 gap-3">
-                    ${stageCardsHtml}
-                </div>
-            `;
-            listContainer.appendChild(matchCard);
         }
 
         function openWeaponManagerModal() {
@@ -589,7 +581,7 @@
             localStorage.setItem('splat3_xmatch_weapons', JSON.stringify(weapons));
             closeWeaponManagerModal();
             renderWeaponTabs();
-            renderSchedule();
+            renderSchedules();
             showToast('ブキ設定を保存しました');
         }
 
@@ -601,7 +593,6 @@
         }
 
         function closeSettingsModal() {
-            saveRatings();
             document.getElementById('settings-modal').classList.add('hidden');
         }
 
@@ -687,7 +678,8 @@
                 }
             });
 
-            renderSchedule();
+            renderSchedules();
+            showToast('評価を保存しました');
         }
 
         function saveRatings() {
@@ -696,7 +688,7 @@
             localStorage.setItem('splat3_selected_weapon_idx', selectedWeaponIndex.toString());
             
             renderWeaponTabs();
-            renderSchedule();
+            renderSchedules();
         }
 
         window.onload = function() {
