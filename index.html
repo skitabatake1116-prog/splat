@@ -116,9 +116,9 @@
 
     <!-- Modal 2: Stage x Weapon Rating Modal -->
     <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex flex-col justify-end sm:justify-center p-0 sm:p-4">
-        <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl h-[88vh] sm:h-[82vh] max-w-md w-full mx-auto flex flex-col shadow-2xl overflow-hidden">
+        <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl h-[94vh] sm:h-[90vh] max-w-md w-full mx-auto flex flex-col shadow-2xl overflow-hidden">
             
-            <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+            <div class="p-3 border-b border-slate-800 flex justify-between items-center">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
                     <i class="fa-solid fa-star text-splat-yellow"></i> ステージ×ブキの評価設定
                 </h3>
@@ -127,30 +127,44 @@
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4 space-y-5 pb-8">
+            <!-- 上部余白を詰め、画面いっぱいにコンテンツを表示 -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-3 pb-8">
+                <div class="p-2.5 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-1.5">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">評価データのバックアップ</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="exportRatingsCSV()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                            <i class="fa-solid fa-file-csv text-splat-yellow"></i> CSV保存
+                        </button>
+                        <label class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer">
+                            <i class="fa-solid fa-upload text-splat-yellow"></i> CSV読込
+                            <input type="file" id="import-file" accept=".csv,.txt" onchange="importRatingsCSV(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">評価するブキを選択</label>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">評価するブキを選択</label>
                     <div id="settings-weapon-tabs" class="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
                         <!-- Dynamic weapon selection buttons -->
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">ルールを選択</label>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">ルールを選択</label>
                     <div class="grid grid-cols-4 gap-1.5" id="rule-selector-buttons">
-                        <button onclick="selectSettingsRule('AREA')" class="rule-btn py-2 text-xs font-bold rounded-lg bg-splat-yellow text-slate-900" data-rule="AREA">エリア</button>
-                        <button onclick="selectSettingsRule('YAGURA')" class="rule-btn py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-300" data-rule="YAGURA">ヤグラ</button>
-                        <button onclick="selectSettingsRule('HOKO')" class="rule-btn py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-300" data-rule="HOKO">ホコ</button>
-                        <button onclick="selectSettingsRule('ASARI')" class="rule-btn py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-300" data-rule="ASARI">アサリ</button>
+                        <button onclick="selectSettingsRule('AREA')" class="rule-btn py-1.5 text-xs font-bold rounded-lg bg-splat-yellow text-slate-900" data-rule="AREA">エリア</button>
+                        <button onclick="selectSettingsRule('YAGURA')" class="rule-btn py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-300" data-rule="YAGURA">ヤグラ</button>
+                        <button onclick="selectSettingsRule('HOKO')" class="rule-btn py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-300" data-rule="HOKO">ホコ</button>
+                        <button onclick="selectSettingsRule('ASARI')" class="rule-btn py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-300" data-rule="ASARI">アサリ</button>
                     </div>
                 </div>
 
-                <div class="space-y-3">
+                <div class="space-y-2">
                     <div class="flex justify-between items-center">
                         <span class="text-xs font-bold text-slate-300">各ステージの評価</span>
                         <span class="text-[10px] text-slate-500">タップで即時反映されます</span>
                     </div>
-                    <div id="stage-rating-list" class="space-y-3">
+                    <div id="stage-rating-list" class="space-y-2.5">
                         <!-- Dynamic Stage Items -->
                     </div>
                 </div>
@@ -261,6 +275,94 @@
             }, 2000);
         }
 
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const yy = String(now.getFullYear()).slice(-2);
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            return `${yy}${mm}${dd}${hh}${min}`;
+        }
+
+        function exportRatingsCSV() {
+            let csvRows = [];
+            csvRows.push("WeaponIndex,WeaponName,Rule,Stage,Rating");
+
+            for (let wIdx = 0; wIdx < weapons.length; wIdx++) {
+                const wName = weapons[wIdx];
+                if (!userRatings[wIdx]) continue;
+                for (const [ruleKey, stagesObj] of Object.entries(userRatings[wIdx])) {
+                    for (const [stageName, rating] of Object.entries(stagesObj)) {
+                        csvRows.push(`${wIdx},"${wName}","${ruleKey}","${stageName}","${rating}"`);
+                    }
+                }
+            }
+
+            const csvString = csvRows.join("\n");
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const timestamp = getFormattedTimestamp();
+            const fileName = `splat3_ratings_${timestamp}.csv`;
+
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = url;
+            downloadAnchor.setAttribute("download", fileName);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
+            URL.revokeObjectURL(url);
+            showToast('評価をCSVで保存しました');
+        }
+
+        function importRatingsCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split("\n");
+                    
+                    let newRatings = {};
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+
+                        const parts = line.split(',');
+                        if (parts.length >= 5) {
+                            const wIdx = parseInt(parts[0].trim());
+                            const rule = parts[2].trim().replace(/"/g, '');
+                            const stage = parts[3].trim().replace(/"/g, '');
+                            const rating = parts[4].trim().replace(/"/g, '');
+
+                            if (!isNaN(wIdx)) {
+                                if (!newRatings[wIdx]) newRatings[wIdx] = {};
+                                if (!newRatings[wIdx][rule]) newRatings[wIdx][rule] = {};
+                                newRatings[wIdx][rule][stage] = rating;
+                            }
+                        }
+                    }
+
+                    if (Object.keys(newRatings).length > 0) {
+                        userRatings = newRatings;
+                        saveRatingsToStorage();
+                        renderSettingsStageList();
+                        renderSchedules();
+                        showToast('CSVから評価を復元しました！');
+                    } else {
+                        alert('有効なデータが見つかりませんでした。');
+                    }
+                } catch (err) {
+                    alert('CSVファイルの読み込みに失敗しました。');
+                }
+            };
+            reader.readAsText(file, "UTF-8");
+        }
+
         function initRatings() {
             let updated = false;
             for (let wIdx = 0; wIdx < 5; wIdx++) {
@@ -324,7 +426,6 @@
                     <div class="absolute bottom-2 left-2 z-20 pointer-events-none pr-10">
                         <span class="text-white font-black text-xs sm:text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-tight block truncate">${stageName}</span>
                     </div>
-                    <!-- 評価枠を画像内右上に設置 -->
                     <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/10 shadow pointer-events-none">
                         <span class="text-[9px] text-slate-300 font-bold">評価</span>
                         <span class="w-6 h-6 rounded-md ${ratingBadgeColor} flex items-center justify-center font-black text-xs shadow">${rating}</span>
@@ -352,7 +453,6 @@
                     <div class="absolute bottom-2 left-2 z-20 pointer-events-none pr-2">
                         <span class="text-white font-black text-xs sm:text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-tight block truncate">${stageName}</span>
                     </div>
-                    <!-- 評価枠を画像内右上に完全に配置 -->
                     <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/15 shadow-xl pointer-events-none">
                         <span class="text-[9px] text-slate-300 font-bold">評価</span>
                         <span class="w-6 h-6 rounded-md ${ratingBadgeColor} flex items-center justify-center font-black text-xs shadow">${rating}</span>
@@ -366,12 +466,12 @@
             const targetUrl = stageMeta?.img || '';
 
             return `
-                <div class="w-full h-24 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
+                <div class="w-full h-20 rounded-xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
                     <img src="${targetUrl}" alt="" 
-                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-24 rounded-2xl bg-gradient-to-br ${colorGradient} flex items-end p-3 relative overflow-hidden\'><div class=\'absolute bottom-2.5 left-3 z-20 pr-4\'><span class=\'text-white font-black text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] block truncate\'>${stageName}</span></div></div>';"
+                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-20 rounded-xl bg-gradient-to-br ${colorGradient} flex items-end p-2 relative overflow-hidden\'><div class=\'absolute bottom-1.5 left-2 z-20 pr-3\'><span class=\'text-white font-black text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] block truncate\'>${stageName}</span></div></div>';"
                          class="w-full h-full object-cover brightness-95" />
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none"></div>
-                    <div class="absolute bottom-2.5 left-3 z-20 pointer-events-none pr-4">
+                    <div class="absolute bottom-1.5 left-2 z-20 pointer-events-none pr-3">
                         <span class="text-white font-black text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide block truncate">${stageName}</span>
                     </div>
                 </div>
@@ -621,9 +721,9 @@
             
             document.querySelectorAll('#rule-selector-buttons button').forEach(btn => {
                 if (btn.dataset.rule === ruleKey) {
-                    btn.className = "rule-btn py-2 text-xs font-bold rounded-lg bg-splat-yellow text-slate-900";
+                    btn.className = "rule-btn py-1.5 text-xs font-bold rounded-lg bg-splat-yellow text-slate-900";
                 } else {
-                    btn.className = "rule-btn py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-300";
+                    btn.className = "rule-btn py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-300";
                 }
             });
 
@@ -639,7 +739,7 @@
             STAGES.forEach(stg => {
                 const currentRating = activeWeaponRatings[stg.name] || 'B';
                 const row = document.createElement('div');
-                row.className = "p-3 rounded-2xl bg-slate-800/90 border border-slate-700/80 space-y-2.5 shadow-lg";
+                row.className = "p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/80 space-y-2 shadow-lg";
                 
                 const stageBannerHtml = getSettingsStageImageHtml(stg, stg.name);
 
@@ -647,10 +747,10 @@
                     <div class="relative">
                         ${stageBannerHtml}
                     </div>
-                    <div class="flex justify-between gap-1 pt-1">
+                    <div class="flex justify-between gap-1 pt-0.5">
                         ${['S', 'A', 'B', 'C', 'D', 'F'].map(tier => `
                             <button onclick="setStageRating(${selectedSettingsWeaponIdx}, '${selectedSettingsRule}', '${stg.name}', '${tier}')" 
-                                class="tier-btn-${stg.name}-${tier} flex-1 py-2 rounded-xl text-xs font-black transition ${currentRating === tier ? (RATING_COLORS[tier] + ' ring-2 ring-white scale-105 shadow-md') : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600'}">
+                                class="tier-btn-${stg.name}-${tier} flex-1 py-1.5 rounded-lg text-xs font-black transition ${currentRating === tier ? (RATING_COLORS[tier] + ' ring-2 ring-white scale-105 shadow-md') : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600'}">
                                 ${tier}
                             </button>
                         `).join('')}
@@ -671,24 +771,15 @@
                 const btn = document.querySelector(`.tier-btn-${stageName}-${t}`);
                 if (btn) {
                     if (t === tier) {
-                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-2 rounded-xl text-xs font-black transition ${RATING_COLORS[t]} ring-2 ring-white scale-105 shadow-md`;
+                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-1.5 rounded-lg text-xs font-black transition ${RATING_COLORS[t]} ring-2 ring-white scale-105 shadow-md`;
                     } else {
-                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-2 rounded-xl text-xs font-black transition bg-slate-700/80 text-slate-300 hover:bg-slate-600`;
+                        btn.className = `tier-btn-${stageName}-${t} flex-1 py-1.5 rounded-lg text-xs font-black transition bg-slate-700/80 text-slate-300 hover:bg-slate-600`;
                     }
                 }
             });
 
             renderSchedules();
             showToast('評価を保存しました');
-        }
-
-        function saveRatings() {
-            saveRatingsToStorage();
-            selectedWeaponIndex = selectedSettingsWeaponIdx;
-            localStorage.setItem('splat3_selected_weapon_idx', selectedWeaponIndex.toString());
-            
-            renderWeaponTabs();
-            renderSchedules();
         }
 
         window.onload = function() {
