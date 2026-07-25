@@ -155,16 +155,16 @@
                     </div>
                 </div>
 
-                <!-- 評価データのバックアップ/復元セクション -->
+                <!-- CSVバックアップ/復元セクション -->
                 <div class="pt-4 border-t border-slate-800 space-y-2">
-                    <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">評価データのバックアップ (データ保護用)</span>
+                    <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">評価データのバックアップ (CSV対応)</span>
                     <div class="grid grid-cols-2 gap-2">
-                        <button onclick="exportRatings()" class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition">
-                            <i class="fa-solid fa-download text-splat-yellow"></i> 評価をファイル保存
+                        <button onclick="exportRatingsCSV()" class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                            <i class="fa-solid fa-file-csv text-splat-yellow"></i> CSV保存
                         </button>
                         <label class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer">
-                            <i class="fa-solid fa-upload text-splat-yellow"></i> ファイルから復元
-                            <input type="file" id="import-file" accept=".json" onchange="importRatings(event)" class="hidden">
+                            <i class="fa-solid fa-upload text-splat-yellow"></i> CSV読込
+                            <input type="file" id="import-file" accept=".csv,.txt" onchange="importRatingsCSV(event)" class="hidden">
                         </label>
                     </div>
                 </div>
@@ -275,47 +275,88 @@
             }, 2000);
         }
 
-        // 評価データのファイル書き出し（エクスポート）
-        function exportRatings() {
-            const dataObj = {
-                weapons: weapons,
-                userRatings: userRatings
-            };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataObj, null, 2));
+        // CSV形式でのファイル書き出し
+        function exportRatingsCSV() {
+            let csvRows = [];
+            // ヘッダー行
+            csvRows.push("WeaponIndex,WeaponName,Rule,Stage,Rating");
+
+            for (let wIdx = 0; wIdx < weapons.length; wIdx++) {
+                const wName = weapons[wIdx];
+                if (!userRatings[wIdx]) continue;
+                for (const [ruleKey, stagesObj] of Object.entries(userRatings[wIdx])) {
+                    for (const [stageName, rating] of Object.entries(stagesObj)) {
+                        csvRows.push(`${wIdx},"${wName}","${ruleKey}","${stageName}","${rating}"`);
+                    }
+                }
+            }
+
+            const csvString = csvRows.join("\n");
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvString], { type: 'text/csv;charset=utf-8;' }); // UTF-8 BOM付きでExcel文字化け対策
+            const url = URL.createObjectURL(blob);
             const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "splat3_checker_backup.json");
+            downloadAnchor.href = url;
+            downloadAnchor.setAttribute("download", "splat3_ratings.csv");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
-            downloadAnchor.remove();
-            showToast('評価データをファイルに保存しました');
+            document.body.removeChild(downloadAnchor);
+            URL.revokeObjectURL(url);
+            showToast('評価をCSVで保存しました');
         }
 
-        // 評価データのファイル読み込み（インポート）
-        function importRatings(event) {
-            const fileReader = new FileReader();
-            if (event.target.files[0]) {
-                fileReader.readAsText(event.target.files[0], "UTF-8");
-                fileReader.onload = function(e) {
-                    try {
-                        const parsed = JSON.parse(e.target.result);
-                        if (parsed.userRatings) {
-                            userRatings = parsed.userRatings;
-                            saveRatingsToStorage();
+        // CSV形式のファイル読み込み
+        function importRatingsCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split("\n");
+                    
+                    // 新しい一時的なオブジェクトを作成
+                    let newRatings = {};
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+
+                        // CSVのカンマ区切りをパース（ダブルクォーテーション対応）
+                        const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+                        let match;
+                        let cols = [];
+                        
+                        // シンプルなカンマ分割
+                        const parts = line.split(',');
+                        if (parts.length >= 5) {
+                            const wIdx = parseInt(parts[0].trim());
+                            const rule = parts[2].trim().replace(/"/g, '');
+                            const stage = parts[3].trim().replace(/"/g, '');
+                            const rating = parts[4].trim().replace(/"/g, '');
+
+                            if (!isNaN(wIdx)) {
+                                if (!newRatings[wIdx]) newRatings[wIdx] = {};
+                                if (!newRatings[wIdx][rule]) newRatings[wIdx][rule] = {};
+                                newRatings[wIdx][rule][stage] = rating;
+                            }
                         }
-                        if (parsed.weapons) {
-                            weapons = parsed.weapons;
-                            localStorage.setItem('splat3_xmatch_weapons', JSON.stringify(weapons));
-                            renderWeaponTabs();
-                        }
+                    }
+
+                    if (Object.keys(newRatings).length > 0) {
+                        userRatings = newRatings;
+                        saveRatingsToStorage();
                         renderSettingsStageList();
                         renderSchedules();
-                        showToast('評価データを復元しました！');
-                    } catch (err) {
-                        alert('ファイルの読み込みに失敗しました。正しいバックアップファイルを選択してください。');
+                        showToast('CSVから評価を復元しました！');
+                    } else {
+                        alert('有効なデータが見つかりませんでした。');
                     }
-                };
-            }
+                } catch (err) {
+                    alert('CSVファイルの読み込みに失敗しました。');
+                }
+            };
+            reader.readAsText(file, "UTF-8");
         }
 
         function initRatings() {
