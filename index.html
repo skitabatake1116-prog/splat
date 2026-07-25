@@ -23,6 +23,13 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
+        #side-menu {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(100%);
+        }
+        #side-menu.open {
+            transform: translateX(0);
+        }
     </style>
 </head>
 <body class="pb-24">
@@ -41,11 +48,46 @@
             </div>
             <h1 class="text-base font-black tracking-wider text-white">X Match Checker</h1>
         </div>
-        <button id="refresh-btn" onclick="fetchSchedule()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-full flex items-center gap-1.5 transition active:scale-95">
-            <i class="fa-solid fa-rotate" id="refresh-icon"></i>
-            <span>更新</span>
-        </button>
+        <div class="flex items-center gap-2">
+            <button id="refresh-btn" onclick="fetchSchedule()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-full flex items-center gap-1.5 transition active:scale-95">
+                <i class="fa-solid fa-rotate" id="refresh-icon"></i>
+                <span>更新</span>
+            </button>
+            <button onclick="toggleSideMenu()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition active:scale-95">
+                <i class="fa-solid fa-bars text-sm"></i>
+            </button>
+        </div>
     </header>
+
+    <!-- Side Menu -->
+    <div id="side-menu-overlay" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm hidden transition-opacity opacity-0" onclick="toggleSideMenu()"></div>
+    <div id="side-menu" class="fixed top-0 right-0 bottom-0 z-50 w-1/2 bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col p-5 space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <span class="font-bold text-sm text-white flex items-center gap-2">
+                <i class="fa-solid fa-compass text-splat-yellow"></i> メニュー
+            </span>
+            <button onclick="toggleSideMenu()" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-white">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+        <nav class="flex flex-col space-y-2">
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl bg-slate-800 text-splat-yellow font-bold text-xs flex items-center gap-2.5">
+                <i class="fa-solid fa-house w-4"></i> TOP画面
+            </a>
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-gun w-4 text-slate-400"></i> 武器一覧
+            </a>
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-star w-4 text-slate-400"></i> My武器
+            </a>
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-link w-4 text-slate-400"></i> リンク4
+            </a>
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-link w-4 text-slate-400"></i> リンク5
+            </a>
+        </nav>
+    </div>
 
     <!-- Main Container -->
     <main class="max-w-md mx-auto p-4 space-y-5">
@@ -71,9 +113,12 @@
                 <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <i class="fa-solid fa-gamepad text-splat-yellow"></i> スケジュール一覧
                 </h2>
+                <!-- 「評価？」から「？」を削除して「評価」に変更 -->
+                <button onclick="openRatingInfoModal()" class="text-xs font-bold text-splat-yellow bg-slate-800/80 hover:bg-slate-700 px-3 py-1 rounded-full border border-slate-700 transition active:scale-95 flex items-center gap-1">
+                    <i class="fa-solid fa-circle-info"></i> 評価
+                </button>
             </div>
 
-            <!-- Current & Next Matches Container -->
             <div id="current-schedules-list" class="space-y-6">
                 <!-- Dynamic Stage Cards -->
             </div>
@@ -88,6 +133,42 @@
         </section>
 
     </main>
+
+    <!-- Modal 0: Rating Info Modal (背景ぼかし無し) -->
+    <div id="rating-info-modal" class="fixed inset-0 z-50 bg-slate-950/70 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-splat-yellow"></i> 評価の目安
+                </h3>
+                <button onclick="closeRatingInfoModal()" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-white">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+            <div class="space-y-2.5 text-xs">
+                <div class="flex items-center gap-2.5 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                    <span class="w-6 h-6 rounded-md bg-amber-400 text-slate-950 font-black flex items-center justify-center shrink-0">S</span>
+                    <span class="text-slate-200 font-medium">潜るぞ！</span>
+                </div>
+                <div class="flex items-center gap-2.5 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                    <span class="w-6 h-6 rounded-md bg-emerald-400 text-slate-950 font-black flex items-center justify-center shrink-0">A</span>
+                    <span class="text-slate-200 font-medium">盛れそう</span>
+                </div>
+                <div class="flex items-center gap-2.5 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                    <span class="w-6 h-6 rounded-md bg-sky-400 text-slate-950 font-black flex items-center justify-center shrink-0">B</span>
+                    <span class="text-slate-200 font-medium">むずいけどハマれば強い</span>
+                </div>
+                <div class="flex items-center gap-2.5 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                    <span class="w-6 h-6 rounded-md bg-slate-600 text-slate-200 font-black flex items-center justify-center shrink-0">C</span>
+                    <span class="text-slate-200 font-medium">キツイ展開多い</span>
+                </div>
+                <div class="flex items-center gap-2.5 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                    <span class="w-6 h-6 rounded-md bg-rose-500 text-white font-black flex items-center justify-center shrink-0">D</span>
+                    <span class="text-slate-200 font-medium">無理！</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal 1: Weapon Manager Modal -->
     <div id="weapon-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex flex-col justify-end sm:justify-center p-0 sm:p-4">
@@ -127,7 +208,6 @@
                 </button>
             </div>
 
-            <!-- 上部余白を詰め、画面いっぱいにコンテンツを表示 -->
             <div class="flex-1 overflow-y-auto p-3 space-y-3 pb-8">
                 <div class="p-2.5 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-1.5">
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">評価データのバックアップ</span>
@@ -220,8 +300,7 @@
             'A': 'bg-emerald-400 text-slate-950',
             'B': 'bg-sky-400 text-slate-950',
             'C': 'bg-slate-600 text-slate-200',
-            'D': 'bg-rose-500 text-white',
-            'F': 'bg-purple-900 text-purple-200'
+            'D': 'bg-rose-500 text-white'
         };
 
         const STAGES = [
@@ -273,6 +352,27 @@
                 toast.classList.remove('opacity-100', 'translate-y-0');
                 toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
             }, 2000);
+        }
+
+        function toggleSideMenu() {
+            const menu = document.getElementById('side-menu');
+            const overlay = document.getElementById('side-menu-overlay');
+            if (menu.classList.contains('open')) {
+                menu.classList.remove('open');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            } else {
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                menu.classList.add('open');
+            }
+        }
+
+        function openRatingInfoModal() {
+            document.getElementById('rating-info-modal').classList.remove('hidden');
+        }
+        function closeRatingInfoModal() {
+            document.getElementById('rating-info-modal').classList.add('hidden');
         }
 
         function getFormattedTimestamp() {
@@ -748,7 +848,7 @@
                         ${stageBannerHtml}
                     </div>
                     <div class="flex justify-between gap-1 pt-0.5">
-                        ${['S', 'A', 'B', 'C', 'D', 'F'].map(tier => `
+                        ${['S', 'A', 'B', 'C', 'D'].map(tier => `
                             <button onclick="setStageRating(${selectedSettingsWeaponIdx}, '${selectedSettingsRule}', '${stg.name}', '${tier}')" 
                                 class="tier-btn-${stg.name}-${tier} flex-1 py-1.5 rounded-lg text-xs font-black transition ${currentRating === tier ? (RATING_COLORS[tier] + ' ring-2 ring-white scale-105 shadow-md') : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600'}">
                                 ${tier}
@@ -767,7 +867,7 @@
             
             saveRatingsToStorage();
 
-            ['S', 'A', 'B', 'C', 'D', 'F'].forEach(t => {
+            ['S', 'A', 'B', 'C', 'D'].forEach(t => {
                 const btn = document.querySelector(`.tier-btn-${stageName}-${t}`);
                 if (btn) {
                     if (t === tier) {
