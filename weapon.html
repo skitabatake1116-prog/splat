@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>スプラ3 武器データベース</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #0b0f19;
+            color: #f8fafc;
+        }
+        .bg-splat-yellow { background-color: #eaff3d; }
+        .text-splat-yellow { color: #eaff3d; }
+        .glass-card {
+            background: rgba(26, 35, 50, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        #side-menu {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(100%);
+        }
+        #side-menu.open {
+            transform: translateX(0);
+        }
+        /* メイン・サブ用の中央配置・ジグザグレイアウトコンテナ */
+        .snake-center-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+            width: 100%;
+            padding-bottom: 4px;
+        }
+        .snake-center-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+        /* メイン用オフセット（2行目の開始を美しくずらす） */
+        .main-row-2-offset {
+            padding-left: 21px;
+            padding-right: 21px;
+        }
+        /* サブ用オフセット（1行目右端、2行目左端にバランスよく空白を作る） */
+        .sub-row-1-offset {
+            padding-right: 21px;
+        }
+        .sub-row-2-offset {
+            padding-left: 21px;
+        }
+
+        /* スペシャル用の横スクロール波状レイアウト */
+        .snake-scroll-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding-bottom: 6px;
+            align-items: flex-start;
+        }
+        .snake-scroll-row {
+            display: flex;
+            gap: 6px;
+            width: max-content;
+        }
+        .special-row-2-offset {
+            padding-left: 21px;
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 glass-card px-3 py-2.5 flex justify-between items-center border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+            <h1 class="text-xs font-black tracking-wider text-white">武器データベース</h1>
+            <span class="text-[10px] text-slate-400 font-bold" id="weapon-count">全0件</span>
+        </div>
+        <button onclick="toggleSideMenu()" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition active:scale-95">
+            <i class="fa-solid fa-bars text-xs"></i>
+        </button>
+    </header>
+
+    <!-- Side Menu -->
+    <div id="side-menu-overlay" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm hidden transition-opacity opacity-0" onclick="toggleSideMenu()"></div>
+    <div id="side-menu" class="fixed top-0 right-0 bottom-0 z-50 w-1/2 bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col p-5 space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <span class="font-bold text-sm text-white flex items-center gap-2">
+                <i class="fa-solid fa-compass text-splat-yellow"></i> メニュー
+            </span>
+            <button onclick="toggleSideMenu()" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-white">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+        <nav class="flex flex-col space-y-2">
+            <a href="sub.html" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-house w-4 text-slate-400"></i> TOP画面
+            </a>
+            <a href="weapon.html" class="py-2.5 px-3 rounded-xl bg-slate-800 text-splat-yellow font-bold text-xs flex items-center gap-2.5">
+                <i class="fa-solid fa-gun w-4"></i> 武器一覧
+            </a>
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-star w-4 text-slate-400"></i> My武器
+            </a>
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-link w-4 text-slate-400"></i> リンク4
+            </a>
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-link w-4 text-slate-400"></i> リンク5
+            </a>
+        </nav>
+    </div>
+
+    <!-- Search Type Selector & Filter Bar -->
+    <div class="sticky top-[49px] z-30 bg-[#0b0f19]/95 backdrop-blur-md px-3 py-2 border-b border-slate-800/80 space-y-2">
+        <!-- 1行目: メイン・サブ・スペシャル切り替え -->
+        <div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+            <button onclick="setSearchType('MAIN')" id="type-btn-MAIN" class="type-btn py-1 rounded-md bg-splat-yellow text-slate-950 font-black text-[11px] transition">メイン</button>
+            <button onclick="setSearchType('SUB')" id="type-btn-SUB" class="type-btn py-1 rounded-md bg-slate-800 text-slate-300 font-bold text-[11px] transition">サブ</button>
+            <button onclick="setSearchType('SPECIAL')" id="type-btn-SPECIAL" class="type-btn py-1 rounded-md bg-slate-800 text-slate-300 font-bold text-[11px] transition">スペシャル</button>
+        </div>
+
+        <!-- 「すべて」ボタン -->
+        <div id="all-btn-container">
+            <!-- 動的生成 -->
+        </div>
+
+        <!-- フィルターアイコン表示エリア -->
+        <div id="filter-options-container" class="scrollbar-none">
+            <!-- 動的生成 -->
+        </div>
+    </div>
+
+    <!-- Main Container (1列レイアウト) -->
+    <main class="max-w-md mx-auto p-2.5">
+        <div id="weapon-grid" class="flex flex-col space-y-1.5">
+            <!-- JavaScriptで動的生成 -->
+        </div>
+    </main>
+
+    <script>
+        const subIdMap = {
+            "スプラッシュボム": "024", "キューバンボム": "025", "クイックボム": "030",
+            "スプリンクラー": "032", "スプラッシュシールド": "028", "タンサンボム": "033",
+            "カーリングボム": "026", "ロボットボム": "031", "ジャンプビーコン": "036",
+            "ポイントセンサー": "037", "トラップ": "035", "ポイズンミスト": "027",
+            "ラインマーカー": "029", "トーピード": "034"
+        };
+
+        const specialIdMap = {
+            "ウルトラショット": "027", "グレートバリア": "025", "ショクワンダー": "026",
+            "マルチミサイル": "034", "アメフラシ": "036", "ナイスダマ": "038",
+            "ホップソナー": "032", "キューインキ": "029", "メガホンレーザー5.1ch": "028",
+            "ジェットパック": "035", "ウルトラハンコ": "037", "カニタンク": "024",
+            "サメライド": "033", "トリプルトルネード": "030", "エナジースタンド": "031",
+            "デコイチラシ": "040", "テイオウイカ": "039", "ウルトラチャクチ": "042",
+            "スミナガシート": "041"
+        };
+
+        const rawWeaponsData = [
+            { id: 236, name: "スプラシューター", sub: "キューバンボム", sp: "ウルトラショット", category: "シューター", range: "50", damage: "47" },
+            { id: 298, name: "スプラシューターコラボ", sub: "スプラッシュボム", sp: "トリプルトルネード", category: "シューター", range: "50", damage: "47" },
+            { id: 389, name: "スプラシューター煌", sub: "クイックボム", sp: "テイオウイカ", category: "シューター", range: "50", damage: "47" },
+            { id: 238, name: ".96ガロン", sub: "スプリンクラー", sp: "キューインキ", category: "シューター", range: "74", damage: "80" },
+            { id: 300, name: ".96ガロンデコ", sub: "スプラッシュシールド", sp: "テイオウイカ", category: "シューター", range: "74", damage: "80" },
+            { id: 392, name: ".96ガロン爪", sub: "ラインマーカー", sp: "エナジースタンド", category: "シューター", range: "74", damage: "80" },
+            { id: 240, name: "シャープマーカー", sub: "クイックボム", sp: "カニタンク", category: "シューター", range: "42", damage: "23" },
+            { id: 307, name: "シャープマーカーネオ", sub: "キューバンボム", sp: "トリプルトルネード", category: "シューター", range: "42", damage: "23" },
+            { id: 374, name: "シャープマーカーGECK", sub: "ポイズンミスト", sp: "アメフラシ", category: "シューター", range: "42", damage: "23" },
+            { id: 246, name: "わかばシューター", sub: "スプラッシュボム", sp: "グレートバリア", category: "シューター", range: "35", damage: "23" },
+            { id: 296, name: "もみじシューター", sub: "トーピード", sp: "ホップソナー", category: "シューター", range: "35", damage: "23" },
+            { id: 247, name: ".52ガロン", sub: "スプラッシュシールド", sp: "メガホンレーザー5.1ch", category: "シューター", range: "55", damage: "75" },
+            { id: 354, name: ".52ガロンデコ", sub: "カーリングボム", sp: "スミナガシート", category: "シューター", range: "55", damage: "75" },
+            { id: 248, name: "H3リールガン", sub: "ポイントセンサー", sp: "エナジースタンド", category: "シューター", range: "70", damage: "58" },
+            { id: 313, name: "H3リールガンD", sub: "スプラッシュシールド", sp: "グレートバリア", category: "シューター", range: "70", damage: "58" },
+            { id: 386, name: "H3リールガンSNAK", sub: "キューバンボム", sp: "トリプルトルネード", category: "シューター", range: "70", damage: "58" },
+            { id: 249, name: "L3リールガン", sub: "カーリングボム", sp: "カニタンク", category: "シューター", range: "62", damage: "26" },
+            { id: 305, name: "L3リールガンD", sub: "クイックボム", sp: "ウルトラハンコ", category: "シューター", range: "62", damage: "26" },
+            { id: 400, name: "L3リールガン箔", sub: "スプラッシュボム", sp: "ジェットパック", category: "シューター", range: "62", damage: "26" },
+            { id: 250, name: "N-ZAP85", sub: "キューバンボム", sp: "エナジースタンド", category: "シューター", range: "50", damage: "23" },
+            { id: 301, name: "N-ZAP89", sub: "ロボットボム", sp: "デコイチラシ", category: "シューター", range: "50", damage: "23" },
+            { id: 251, name: "ジェットスイーパー", sub: "ラインマーカー", sp: "キューインキ", category: "シューター", range: "82", damage: "35" },
+            { id: 308, name: "ジェットスイーパーカスタム", sub: "ポイズンミスト", sp: "アメフラシ", category: "シューター", range: "82", damage: "35" },
+            { id: 384, name: "ジェットスイーパーCOBR", sub: "クイックボム", sp: "ウルトラチャクチ", category: "シューター", range: "82", damage: "35" },
+            { id: 252, name: "プライムシューター", sub: "ラインマーカー", sp: "カニタンク", category: "シューター", range: "70", damage: "60" },
+            { id: 293, name: "プライムシューターコラボ", sub: "キューバンボム", sp: "ナイスダマ", category: "シューター", range: "70", damage: "60" },
+            { id: 380, name: "プライムシューターFRZN", sub: "スプラッシュボム", sp: "マルチミサイル", category: "シューター", range: "70", damage: "60" },
+            { id: 253, name: "プロモデラーMG", sub: "タンサンボム", sp: "サメライド", category: "シューター", range: "35", damage: "11" },
+            { id: 289, name: "プロモデラーRG", sub: "スプリンクラー", sp: "ナイスダマ", category: "シューター", range: "35", damage: "11" },
+            { id: 391, name: "プロモデラー彩", sub: "クイックボム", sp: "スミナガシート", category: "シューター", range: "35", damage: "11" },
+            { id: 254, name: "ボールドマーカー", sub: "カーリングボム", sp: "ウルトラハンコ", category: "シューター", range: "12", damage: "52" },
+            { id: 310, name: "ボールドマーカーネオ", sub: "ジャンプビーコン", sp: "メガホンレーザー5.1ch", category: "シューター", range: "12", damage: "52" },
+            { id: 255, name: "ボトルガイザー", sub: "スプラッシュシールド", sp: "ウルトラショット", category: "シューター", range: "77", damage: "52" },
+            { id: 333, name: "ボトルガイザーフォイル", sub: "ロボットボム", sp: "スミナガシート", category: "シューター", range: "77", damage: "52" },
+            { id: 286, name: "スペースシューター", sub: "ポイントセンサー", sp: "メガホンレーザー5.1ch", category: "シューター", range: "68", damage: "12" },
+            { id: 317, name: "スペースシューターコラボ", sub: "トラップ", sp: "ジェットパック", category: "シューター", range: "68", damage: "12" },
+            { id: 234, name: "ロングブラスター", sub: "スプラッシュボム", sp: "ホップソナー", category: "ブラスター", range: "56", damage: "70" },
+            { id: 239, name: "ホットブラスター", sub: "ロボットボム", sp: "グレートバリア", category: "ブラスター", range: "27", damage: "70" },
+            { id: 340, name: "ホットブラスターカスタム", sub: "ポイントセンサー", sp: "ウルトラチャクチ", category: "ブラスター", range: "27", damage: "70" },
+            { id: 390, name: "ホットブラスター艶", sub: "ジャンプビーコン", sp: "カニタンク", category: "ブラスター", range: "27", damage: "70" },
+            { id: 244, name: "クラッシュブラスター", sub: "スプラッシュボム", sp: "ウルトラショット", category: "ブラスター", range: "21", damage: "26" },
+            { id: 302, name: "クラッシュブラスターネオ", sub: "カーリングボム", sp: "デコイチラシ", category: "ブラスター", range: "21", damage: "26" },
+            { id: 256, name: "Rブラスターエリート", sub: "ポイズンミスト", sp: "キューインキ", category: "ブラスター", range: "72", damage: "35" },
+            { id: 314, name: "Rブラスターエリートデコ", sub: "ラインマーカー", sp: "メガホンレーザー5.1ch", category: "ブラスター", range: "72", damage: "35" },
+            { id: 383, name: "RブラスターエリートWNTR", sub: "キューバンボム", sp: "エナジースタンド", category: "ブラスター", range: "72", damage: "35" },
+            { id: 257, name: "ノヴァブラスター", sub: "スプラッシュボム", sp: "ショクワンダー", category: "ブラスター", range: "18", damage: "70" },
+            { id: 294, name: "ノヴァブラスターネオ", sub: "タンサンボム", sp: "ウルトラハンコ", category: "ブラスター", range: "18", damage: "70" },
+            { id: 258, name: "ラピッドブラスター", sub: "トラップ", sp: "トリプルトルネード", category: "ブラスター", range: "62", damage: "35" },
+            { id: 306, name: "ラピッドブラスターデコ", sub: "トーピード", sp: "ジェットパック", category: "ブラスター", range: "62", damage: "35" },
+            { id: 311, name: "S-BLAST92", sub: "スプリンクラー", sp: "サメライド", category: "ブラスター", range: "45", damage: "70" },
+            { id: 337, name: "S-BLAST91", sub: "クイックボム", sp: "ナイスダマ", category: "ブラスター", range: "45", damage: "70" },
+            { id: 371, name: "ロングブラスターカスタム", sub: "スプラッシュボム", sp: "テイオウイカ", category: "ブラスター", range: "56", damage: "70" },
+            { id: 233, name: "ダイナモローラー", sub: "スプリンクラー", sp: "エナジースタンド", category: "ローラー", range: "76", damage: "26" },
+            { id: 331, name: "ダイナモローラーテスラ", sub: "スプラッシュボム", sp: "デコイチラシ", category: "ローラー", range: "76", damage: "26" },
+            { id: 403, name: "ダイナモローラー冥", sub: "ポイントセンサー", sp: "メガホンレーザー5.1ch", category: "ローラー", range: "76", damage: "26" },
+            { id: 245, name: "スプラローラー", sub: "カーリングボム", sp: "グレートバリア", category: "ローラー", range: "48", damage: "45" },
+            { id: 299, name: "スプラローラーコラボ", sub: "ジャンプビーコン", sp: "テイオウイカ", category: "ローラー", range: "48", damage: "45" },
+            { id: 259, name: "ヴァリアブルローラー", sub: "トラップ", sp: "マルチミサイル", category: "ローラー", range: "58", damage: "45" },
+            { id: 358, name: "ヴァリアブルローラーフォイル", sub: "キューバンボム", sp: "スミナガシート", category: "ローラー", range: "58", damage: "45" },
+            { id: 260, name: "カーボンローラー", sub: "ロボットボム", sp: "ショクワンダー", category: "ローラー", range: "20", damage: "63" },
+            { id: 297, name: "カーボンローラーデコ", sub: "クイックボム", sp: "ウルトラショット", category: "ローラー", range: "20", damage: "63" },
+            { id: 375, name: "カーボンローラーANGL", sub: "タンサンボム", sp: "デコイチラシ", category: "ローラー", range: "20", damage: "63" },
+            { id: 287, name: "ワイドローラー", sub: "スプラッシュシールド", sp: "キューインキ", category: "ローラー", range: "55", damage: "54" },
+            { id: 321, name: "ワイドローラーコラボ", sub: "ラインマーカー", sp: "アメフラシ", category: "ローラー", range: "55", damage: "54" },
+            { id: 399, name: "ワイドローラー惑", sub: "トーピード", sp: "ウルトラチャクチ", category: "ローラー", range: "55", damage: "54" },
+            { id: 261, name: "パブロ", sub: "スプラッシュボム", sp: "メガホンレーザー5.1ch", category: "フデ", range: "5", damage: "100" },
+            { id: 291, name: "パブロ・ヒュー", sub: "トラップ", sp: "ウルトラハンコ", category: "フデ", range: "5", damage: "100" },
+            { id: 262, name: "ホクサイ", sub: "キューバンボム", sp: "ショクワンダー", category: "フデ", range: "23", damage: "80" },
+            { id: 324, name: "ホクサイ・ヒュー", sub: "ジャンプビーコン", sp: "アメフラシ", category: "フデ", range: "23", damage: "80" },
+            { id: 401, name: "ホクサイ彗", sub: "ロボットボム", sp: "テイオウイカ", category: "フデ", range: "23", damage: "80" },
+            { id: 312, name: "フィンセント", sub: "カーリングボム", sp: "ホップソナー", category: "フデ", range: "34", damage: "85" },
+            { id: 335, name: "フィンセント・ヒュー", sub: "ポイントセンサー", sp: "マルチミサイル", category: "フデ", range: "34", damage: "85" },
+            { id: 377, name: "フィンセントBRNZ", sub: "スプラッシュシールド", sp: "ウルトラショット", category: "フデ", range: "34", damage: "85" },
+            { id: 232, name: "リッター4K", sub: "トラップ", sp: "ホップソナー", category: "チャージャー", range: "96", damage: "21" },
+            { id: 361, name: "リッター4Kカスタム", sub: "ジャンプビーコン", sp: "テイオウイカ", category: "チャージャー", range: "96", damage: "21" },
+            { id: 362, name: "4Kスコープカスタム", sub: "ジャンプビーコン", sp: "テイオウイカ", category: "チャージャー", range: "100", damage: "21" },
+            { id: 243, name: "スプラチャージャー", sub: "スプラッシュボム", sp: "キューインキ", category: "チャージャー", range: "88", damage: "50" },
+            { id: 303, name: "スプラチャージャーコラボ", sub: "スプラッシュシールド", sp: "トリプルトルネード", category: "チャージャー", range: "88", damage: "50" },
+            { id: 381, name: "スプラチャージャーFRST", sub: "スプリンクラー", sp: "カニタンク", category: "チャージャー", range: "88", damage: "50" },
+            { id: 263, name: "14式竹筒銃・甲", sub: "ロボットボム", sp: "メガホンレーザー5.1ch", category: "チャージャー", range: "78", damage: "90" },
+            { id: 264, name: "スクイックリンα", sub: "ポイントセンサー", sp: "グレートバリア", category: "チャージャー", range: "75", damage: "70" },
+            { id: 356, name: "スククイックリンβ", sub: "ロボットボム", sp: "ショクワンダー", category: "チャージャー", range: "75", damage: "70" },
+            { id: 265, name: "ソイチューバー", sub: "トーピード", sp: "マルチミサイル", category: "チャージャー", range: "78", damage: "38" },
+            { id: 325, name: "ソイチューバーカスタム", sub: "タンサンボム", sp: "ウルトラハンコ", category: "チャージャー", range: "78", damage: "38" },
+            { id: 282, name: "スプラスコープ", sub: "スプラッシュボム", sp: "キューインキ", category: "チャージャー", range: "91", damage: "50" },
+            { id: 304, name: "スプラスコープコラボ", sub: "スプラッシュシールド", sp: "トリプルトルネード", category: "チャージャー", range: "91", damage: "50" },
+            { id: 382, name: "スプラスコープFRST", sub: "スプリンクラー", sp: "カニタンク", category: "チャージャー", range: "91", damage: "50" },
+            { id: 283, name: "4Kスコープ", sub: "トラップ", sp: "ホップソナー", category: "チャージャー", range: "100", damage: "21" },
+            { id: 288, name: "R-PEN/5H", sub: "スプリンクラー", sp: "エナジースタンド", category: "チャージャー", range: "91", damage: "43" },
+            { id: 332, name: "R-PEN/5B", sub: "スプラッシュシールド", sp: "アメフラシ", category: "チャージャー", range: "91", damage: "43" },
+            { id: 368, name: "14式竹筒銃・乙", sub: "タンサンボム", sp: "デコイチラシ", category: "チャージャー", range: "78", damage: "90" },
+            { id: 235, name: "スクリュースロッシャー", sub: "タンサンボム", sp: "ナイスダマ", category: "スロッシャー", range: "60", damage: "90" },
+            { id: 329, name: "スクリュースロッシャーネオ", sub: "ポイントセンサー", sp: "ウルトラショット", category: "スロッシャー", range: "60", damage: "90" },
+            { id: 266, name: "エクスプロッシャー", sub: "ポイントセンサー", sp: "アメフラシ", category: "スロッシャー", range: "77", damage: "65" },
+            { id: 363, name: "エクスプロッシャーカスタム", sub: "スプラッシュシールド", sp: "ウルトラチャクチ", category: "スロッシャー", range: "77", damage: "65" },
+            { id: 267, name: "オーバーフロッシャー", sub: "スプリンクラー", sp: "アメフラシ", category: "スロッシャー", range: "85", damage: "30" },
+            { id: 327, name: "オーバーフロッシャーデコ", sub: "ラインマーカー", sp: "テイオウイカ", category: "スロッシャー", range: "85", damage: "30" },
+            { id: 268, name: "バケットスロッシャー", sub: "スプラッシュボム", sp: "トリプルトルネード", category: "スロッシャー", range: "58", damage: "84" },
+            { id: 290, name: "バケットスロッシャーデコ", sub: "ラインマーカー", sp: "ショクワンダー", category: "スロッシャー", range: "58", damage: "84" },
+            { id: 269, name: "ヒッセン", sub: "ポイズンミスト", sp: "ジェットパック", category: "スロッシャー", range: "31", damage: "75" },
+            { id: 309, name: "ヒッセン・ヒュー", sub: "タンサンボム", sp: "エナジースタンド", category: "スロッシャー", range: "31", damage: "75" },
+            { id: 378, name: "ヒッセンASH", sub: "スプラッシュボム", sp: "スミナガシート", category: "スロッシャー", range: "31", damage: "75" },
+            { id: 322, name: "モップリン", sub: "キューバンボム", sp: "サメライド", category: "スロッシャー", range: "60", damage: "55" },
+            { id: 357, name: "モップリンD", sub: "ジャンプビーコン", sp: "ホップソナー", category: "スロッシャー", range: "60", damage: "55" },
+            { id: 393, name: "モップリン角", sub: "カーリングボム", sp: "カニタンク", category: "スロッシャー", range: "60", damage: "55" },
+            { id: 237, name: "ハイドラント", sub: "ロボットボム", sp: "ナイスダマ", category: "スピナー", range: "85", damage: "10" },
+            { id: 396, name: "ハイドラント圧", sub: "スプリンクラー", sp: "グレートバリア", category: "スピナー", range: "85", damage: "10" },
+            { id: 270, name: "クーゲルシュライバー", sub: "タンサンボム", sp: "ジェットパック", category: "スピナー", range: "84", damage: "19" },
+            { id: 328, name: "クーゲルシュライバー・ヒュー", sub: "トラップ", sp: "キューインキ", category: "スピナー", range: "84", damage: "19" },
+            { id: 271, name: "スプラスピナー", sub: "クイックボム", sp: "ウルトラハンコ", category: "スピナー", range: "62", damage: "80" },
+            { id: 295, name: "スプラスピナーコラボ", sub: "ポイズンミスト", sp: "グレートバリア", category: "スピナー", range: "62", damage: "80" },
+            { id: 385, name: "スプラスピナーPYTN", sub: "ジャンプビーコン", sp: "ウルトラショット", category: "スピナー", range: "62", damage: "80" },
+            { id: 272, name: "ノーチラス47", sub: "ポイントセンサー", sp: "アメフラシ", category: "スピナー", range: "74", damage: "37" },
+            { id: 359, name: "ノーチラス79", sub: "キューバンボム", sp: "ウルトラチャクチ", category: "スピナー", range: "74", damage: "37" },
+            { id: 273, name: "バレルスピナー", sub: "スプリンクラー", sp: "ホップソナー", category: "スピナー", range: "78", damage: "38" },
+            { id: 320, name: "バレルスピナーデコ", sub: "ポイントセンサー", sp: "テイオウイカ", category: "スピナー", range: "78", damage: "38" },
+            { id: 323, name: "イグザミナー", sub: "カーリングボム", sp: "エナジースタンド", category: "スピナー", range: "70", damage: "15" },
+            { id: 370, name: "イグザミナー・ヒュー", sub: "スプラッシュボム", sp: "カニタンク", category: "スピナー", range: "70", damage: "15" },
+            { id: 373, name: "ハイドラントカスタム", sub: "トラップ", sp: "スミナガシート", category: "スピナー", range: "85", damage: "10" },
+            { id: 242, name: "ケルビン525", sub: "スプラッシュシールド", sp: "ナイスダマ", category: "マニューバー", range: "66", damage: "75" },
+            { id: 360, name: "ケルビン525デコ", sub: "ポイントセンサー", sp: "ウルトラショット", category: "マニューバー", range: "66", damage: "75" },
+            { id: 274, name: "クアッドホッパーブラック", sub: "ロボットボム", sp: "サメライド", category: "マニューバー", range: "58", damage: "23" },
+            { id: 315, name: "クアッドホッパーホワイト", sub: "スプリンクラー", sp: "ショクワンダー", category: "マニューバー", range: "58", damage: "23" },
+            { id: 275, name: "スパッタリー", sub: "ジャンプビーコン", sp: "エナジースタンド", category: "マニューバー", range: "24", damage: "47" },
+            { id: 292, name: "スパッタリー・ヒュー", sub: "トーピード", sp: "サメライド", category: "マニューバー", range: "24", damage: "47" },
+            { id: 376, name: "スパッタリーOWL", sub: "スプラッシュボム", sp: "メガホンレーザー5.1ch", category: "マニューバー", range: "24", damage: "47" },
+            { id: 276, name: "スプラマニューバー", sub: "キューバンボム", sp: "カニタンク", category: "マニューバー", range: "50", damage: "30" },
+            { id: 339, name: "スプラマニューバーコラボ", sub: "カーリングボム", sp: "ウルトラチャクチ", category: "マニューバー", range: "50", damage: "30" },
+            { id: 398, name: "スプラマニューバー耀", sub: "タンサンボム", sp: "グレートバリア", category: "マニューバー", range: "50", damage: "30" },
+            { id: 277, name: "デュアルスイーパー", sub: "スプラッシュボム", sp: "ホップソナー", category: "マニューバー", range: "70", damage: "23" },
+            { id: 319, name: "デュアルスイーパーカスタム", sub: "ジャンプビーコン", sp: "デコイチラシ", category: "マニューバー", range: "70", damage: "23" },
+            { id: 394, name: "デュアルスイーパー蹄", sub: "ポイントセンサー", sp: "スミナガシート", category: "マニューバー", range: "70", damage: "23" },
+            { id: 355, name: "ガエンFF", sub: "トラップ", sp: "メガホンレーザー5.1ch", category: "マニューバー", range: "77", damage: "21" },
+            { id: 372, name: "ガエンFFカスタム", sub: "クイックボム", sp: "トリプルトルネード", category: "マニューバー", range: "77", damage: "21" },
+            { id: 241, name: "スパイガジェット", sub: "トラップ", sp: "サメライド", category: "シェルター", range: "50", damage: "30" },
+            { id: 334, name: "スパイガジェットソレーラ", sub: "トーピード", sp: "スミナガシート", category: "シェルター", range: "50", damage: "30" },
+            { id: 397, name: "スパイガジェット繚", sub: "カーリングボム", sp: "メガホンレーザー5.1ch", category: "シェルター", range: "50", damage: "30" },
+            { id: 278, name: "キャンピングシェルター", sub: "ジャンプビーコン", sp: "キューインキ", category: "シェルター", range: "62", damage: "85" },
+            { id: 316, name: "キャンピングシェルターソレーラ", sub: "トラップ", sp: "ウルトラショット", category: "シェルター", range: "62", damage: "85" },
+            { id: 388, name: "キャンピングシェルターCREM", sub: "ポイズンミスト", sp: "デコイチラシ", category: "シェルター", range: "62", damage: "85" },
+            { id: 279, name: "パラシェルター", sub: "スプリンクラー", sp: "トリプルトルネード", category: "シェルター", range: "43", damage: "65" },
+            { id: 326, name: "パラシェルターソレーラ", sub: "ロボットボム", sp: "ジェットパック", category: "シェルター", range: "43", damage: "65" },
+            { id: 353, name: "24式張替傘・甲", sub: "ラインマーカー", sp: "グレートバリア", category: "シェルター", range: "56", damage: "75" },
+            { id: 369, name: "24式張替傘・乙", sub: "ポイズンミスト", sp: "ウルトラチャクチ", category: "シェルター", range: "56", damage: "75" },
+            { id: 231, name: "トライストリンガー", sub: "ポイズンミスト", sp: "メガホンレーザー5.1ch", category: "ストリンガー", range: "88", damage: "40" },
+            { id: 330, name: "トライストリンガーコラボ", sub: "スプリンクラー", sp: "デコイチラシ", category: "ストリンガー", range: "88", damage: "40" },
+            { id: 402, name: "トライストリンガー燈", sub: "ラインマーカー", sp: "ジェットパック", category: "ストリンガー", range: "88", damage: "40" },
+            { id: 284, name: "LACT-450", sub: "カーリングボム", sp: "マルチミサイル", category: "ストリンガー", range: "60", damage: "77" },
+            { id: 336, name: "LACT-450デコ", sub: "スプラッシュシールド", sp: "サメライド", category: "ストリンガー", range: "60", damage: "77" },
+            { id: 387, name: "LACT-450MILK", sub: "トーピード", sp: "ナイスダマ", category: "ストリンガー", range: "60", damage: "77" },
+            { id: 364, name: "フルイドV", sub: "ロボットボム", sp: "ウルトラハンコ", category: "ストリンガー", range: "83", damage: "35" },
+            { id: 365, name: "フルイドVカスタム", sub: "ポイントセンサー", sp: "ホップソナー", category: "ストリンガー", range: "83", damage: "35" },
+            { id: 280, name: "ドライブワイパー", sub: "トーピード", sp: "ウルトラハンコ", category: "ワイパー", range: "58", damage: "30" },
+            { id: 318, name: "ドライブワイパーデコ", sub: "ジャンプビーコン", sp: "マルチミサイル", category: "ワイパー", range: "58", damage: "30" },
+            { id: 379, name: "ドライブワイパーRUST", sub: "カーリングボム", sp: "ウルトラショット", category: "ワイパー", range: "58", damage: "30" },
+            { id: 281, name: "ジムワイパー", sub: "クイックボム", sp: "ショクワンダー", category: "ワイパー", range: "75", damage: "43" },
+            { id: 338, name: "ジムワイパー・ヒュー", sub: "ポイズンミスト", sp: "カニタンク", category: "ワイパー", range: "75", damage: "43" },
+            { id: 395, name: "ジムワイパー封", sub: "ロボットボム", sp: "ナイスダマ", category: "ワイパー", range: "75", damage: "43" },
+            { id: 366, name: "デンタルワイパーミント", sub: "キューバンボム", sp: "グレートバリア", category: "ワイパー", range: "63", damage: "58" },
+            { id: 367, name: "デンタルワイパースミ", sub: "スプラッシュシールド", sp: "ジェットパック", category: "ワイパー", range: "63", damage: "58" }
+        ];
+
+        const weaponsData = rawWeaponsData.map(w => {
+            return {
+                ...w,
+                mainId: w.id,
+                subId: subIdMap[w.sub] || "024",
+                spId: specialIdMap[w.sp] || "027",
+                subName: w.sub,
+                spName: w.sp
+            };
+        });
+
+        const mainCategoriesRow1 = ["シューター", "チャージャー", "スピナー", "シェルター", "フデ", "ワイパー"];
+        const mainCategoriesRow2 = ["ローラー", "スロッシャー", "マニューバー", "ブラスター", "ストリンガー"];
+
+        const subWeaponsRow1 = ["スプラッシュボム", "クイックボム", "スプラッシュシールド", "カーリングボム", "ジャンプビーコン", "トラップ", "ラインマーカー"];
+        const subWeaponsRow2 = ["キューバンボム", "スプリンクラー", "タンサンボム", "ロボットボム", "ポイントセンサー", "ポイズンミスト", "トーピード"];
+
+        const specialWeaponsRow1 = ["ウルトラショット", "ショクワンダー", "アメフラシ", "ホップソナー", "メガホンレーザー5.1ch", "ウルトラハンコ", "サメライド", "エナジースタンド", "テイオウイカ", "スミナガシート"];
+        const specialWeaponsRow2 = ["グレートバリア", "マルチミサイル", "ナイスダマ", "キューインキ", "ジェットパック", "カニタンク", "トリプルトルネード", "デコイチラシ", "ウルトラチャクチ"];
+
+        const mainIdByName = {
+            "シューター": "236", "チャージャー": "243", "スピナー": "237", "シェルター": "278", "フデ": "261", "ワイパー": "280",
+            "ローラー": "245", "スロッシャー": "268", "マニューバー": "276", "ブラスター": "234", "ストリンガー": "231"
+        };
+
+        const subIdByName = {
+            "スプラッシュボム": "024", "クイックボム": "030", "スプラッシュシールド": "028", "カーリングボム": "026", "ジャンプビーコン": "036", "トラップ": "035", "ラインマーカー": "029",
+            "キューバンボム": "025", "スプリンクラー": "032", "タンサンボム": "033", "ロボットボム": "031", "ポイントセンサー": "037", "ポイズンミスト": "027", "トーピード": "034"
+        };
+
+        const specialIdByName = {
+            "ウルトラショット": "027", "ショクワンダー": "026", "アメフラシ": "036", "ホップソナー": "032", "メガホンレーザー5.1ch": "028", "ウルトラハンコ": "037", "サメライド": "033", "エナジースタンド": "031", "テイオウイカ": "039", "スミナガシート": "041",
+            "グレートバリア": "025", "マルチミサイル": "034", "ナイスダマ": "038", "キューインキ": "029", "ジェットパック": "035", "カニタンク": "024", "トリプルトルネード": "030", "デコイチラシ": "040", "ウルトラチャクチ": "042"
+        };
+
+        let searchType = 'MAIN';
+        let currentFilter = 'ALL';
+
+        function toggleSideMenu() {
+            const menu = document.getElementById('side-menu');
+            const overlay = document.getElementById('side-menu-overlay');
+            if (menu.classList.contains('open')) {
+                menu.classList.remove('open');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            } else {
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                menu.classList.add('open');
+            }
+        }
+
+        function setSearchType(type) {
+            searchType = type;
+            currentFilter = 'ALL';
+
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                if (btn.id === `type-btn-${type}`) {
+                    btn.className = "type-btn py-1 rounded-md bg-splat-yellow text-slate-950 font-black text-[11px] transition";
+                } else {
+                    btn.className = "type-btn py-1 rounded-md bg-slate-800 text-slate-300 font-bold text-[11px] transition";
+                }
+            });
+
+            renderFilterOptions();
+            filterWeapons();
+        }
+
+        function renderFilterOptions() {
+            const allBtnContainer = document.getElementById('all-btn-container');
+            allBtnContainer.innerHTML = '';
+
+            const allBtn = document.createElement('button');
+            allBtn.onclick = () => { currentFilter = 'ALL'; renderFilterOptions(); filterWeapons(); };
+            allBtn.className = `w-full py-1.5 rounded-lg transition text-[11px] font-bold flex items-center justify-center ${currentFilter === 'ALL' ? 'bg-splat-yellow text-slate-950 font-black' : 'bg-slate-800 text-slate-300 border border-slate-700'}`;
+            allBtn.textContent = 'すべて';
+            allBtnContainer.appendChild(allBtn);
+
+            const container = document.getElementById('filter-options-container');
+            container.innerHTML = '';
+
+            let row1 = [];
+            let row2 = [];
+
+            if (searchType === 'MAIN') {
+                row1 = mainCategoriesRow1;
+                row2 = mainCategoriesRow2;
+
+                const centerDiv = document.createElement('div');
+                centerDiv.className = "snake-center-container";
+
+                const rowDiv1 = document.createElement('div');
+                rowDiv1.className = "snake-center-row";
+                row1.forEach(name => { rowDiv1.appendChild(createFilterButton(name)); });
+                centerDiv.appendChild(rowDiv1);
+
+                const rowDiv2 = document.createElement('div');
+                rowDiv2.className = "snake-center-row main-row-2-offset";
+                row2.forEach(name => { rowDiv2.appendChild(createFilterButton(name)); });
+                centerDiv.appendChild(rowDiv2);
+
+                container.appendChild(centerDiv);
+
+            } else if (searchType === 'SUB') {
+                row1 = subWeaponsRow1;
+                row2 = subWeaponsRow2;
+
+                const centerDiv = document.createElement('div');
+                centerDiv.className = "snake-center-container";
+
+                const rowDiv1 = document.createElement('div');
+                rowDiv1.className = "snake-center-row sub-row-1-offset";
+                row1.forEach(name => { rowDiv1.appendChild(createFilterButton(name)); });
+                centerDiv.appendChild(rowDiv1);
+
+                const rowDiv2 = document.createElement('div');
+                rowDiv2.className = "snake-center-row sub-row-2-offset";
+                row2.forEach(name => { rowDiv2.appendChild(createFilterButton(name)); });
+                centerDiv.appendChild(rowDiv2);
+
+                container.appendChild(centerDiv);
+
+            } else if (searchType === 'SPECIAL') {
+                row1 = specialWeaponsRow1;
+                row2 = specialWeaponsRow2;
+
+                const scrollDiv = document.createElement('div');
+                scrollDiv.className = "snake-scroll-container scrollbar-none";
+
+                const rowDiv1 = document.createElement('div');
+                rowDiv1.className = "snake-scroll-row";
+                row1.forEach(name => { rowDiv1.appendChild(createFilterButton(name)); });
+                scrollDiv.appendChild(rowDiv1);
+
+                const rowDiv2 = document.createElement('div');
+                rowDiv2.className = "snake-scroll-row special-row-2-offset";
+                row2.forEach(name => { rowDiv2.appendChild(createFilterButton(name)); });
+                scrollDiv.appendChild(rowDiv2);
+
+                container.appendChild(scrollDiv);
+            }
+        }
+
+        function createFilterButton(name) {
+            let id = "";
+            let filterValue = "";
+            if (searchType === 'MAIN') {
+                id = mainIdByName[name] || "236";
+                filterValue = name;
+            } else if (searchType === 'SUB') {
+                id = subIdByName[name] || "024";
+                filterValue = id;
+            } else if (searchType === 'SPECIAL') {
+                id = specialIdByName[name] || "027";
+                filterValue = id;
+            }
+
+            const isActive = currentFilter === filterValue;
+            const btn = document.createElement('button');
+            btn.onclick = () => { currentFilter = filterValue; renderFilterOptions(); filterWeapons(); };
+            btn.className = `p-1 rounded-lg transition flex items-center justify-center border shrink-0 w-9 h-9 ${isActive ? 'bg-splat-yellow border-white scale-105 shadow-md' : 'bg-slate-800 border-slate-700 opacity-80 hover:opacity-100'}`;
+            btn.title = name;
+
+            let imgUrl = "";
+            if (searchType === 'MAIN') {
+                imgUrl = `https://api.ikaclo.ink/images/weapons/main/weapon_${id}.png`;
+            } else if (searchType === 'SUB') {
+                imgUrl = `https://api.ikaclo.ink/images/weapons/sub/sub_${id}.png`;
+            } else if (searchType === 'SPECIAL') {
+                imgUrl = `https://api.ikaclo.ink/images/weapons/special/special_${id}.png`;
+            }
+
+            btn.innerHTML = `<img src="${imgUrl}" alt="${name}" class="w-full h-full object-contain" onerror="this.src='https://splatoon3.ink/assets/favicon.ico'">`;
+            return btn;
+        }
+
+        function renderWeapons(list) {
+            const grid = document.getElementById('weapon-grid');
+            grid.innerHTML = '';
+            document.getElementById('weapon-count').textContent = `全 ${list.length} 件`;
+
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="text-center py-10 text-xs text-slate-500 font-bold">該当する武器が見つかりませんでした</div>`;
+                return;
+            }
+
+            list.forEach(w => {
+                const mainImgUrl = `https://api.ikaclo.ink/images/weapons/main/weapon_${w.mainId}.png`;
+                const subImgUrl = `https://api.ikaclo.ink/images/weapons/sub/sub_${w.subId}.png`;
+                const spImgUrl = `https://api.ikaclo.ink/images/weapons/special/special_${w.spId}.png`;
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/90 border border-slate-800 rounded-lg px-2 py-1.5 flex items-center justify-between shadow-sm gap-1.5";
+                card.innerHTML = `
+                    <div class="w-36 shrink-0 truncate">
+                        <span class="text-[8px] text-splat-yellow font-bold uppercase tracking-wider block leading-none">${w.category}</span>
+                        <h2 class="text-[11px] font-black text-white truncate leading-tight mt-0.5">${w.name}</h2>
+                    </div>
+                    <div class="w-8 h-8 rounded bg-slate-950 flex items-center justify-center border border-slate-800 shrink-0 p-0.5">
+                        <img src="${mainImgUrl}" alt="${w.name}" class="w-full h-full object-contain" onerror="this.src='https://splatoon3.ink/assets/favicon.ico'">
+                    </div>
+                    <div class="w-7 h-7 rounded bg-slate-950 flex items-center justify-center border border-slate-800 shrink-0 p-0.5">
+                        <img src="${subImgUrl}" alt="${w.sub}" class="w-full h-full object-contain" onerror="this.style.display='none'">
+                    </div>
+                    <div class="w-7 h-7 rounded bg-slate-950 flex items-center justify-center border border-slate-800 shrink-0 p-0.5">
+                        <img src="${spImgUrl}" alt="${w.sp}" class="w-full h-full object-contain" onerror="this.style.display='none'">
+                    </div>
+                    <div class="w-12 text-right shrink-0 text-[10px] text-slate-300 space-y-0.5 bg-slate-950/50 px-1 py-0.5 rounded border border-slate-800/60">
+                        <div class="flex justify-between items-center px-0.5">
+                            <span class="text-[8px] text-slate-400">射</span>
+                            <span class="font-bold text-[10px]">${w.range}</span>
+                        </div>
+                        <div class="flex justify-between items-center px-0.5">
+                            <span class="text-[8px] text-slate-400">ダ</span>
+                            <span class="font-bold text-[10px]">${w.damage}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterWeapons() {
+            const filtered = weaponsData.filter(w => {
+                if (searchType === 'MAIN') {
+                    return currentFilter === 'ALL' || w.category === currentFilter;
+                } else if (searchType === 'SUB') {
+                    return currentFilter === 'ALL' || w.subId === currentFilter;
+                } else if (searchType === 'SPECIAL') {
+                    return currentFilter === 'ALL' || w.spId === currentFilter;
+                }
+                return true;
+            });
+            renderWeapons(filtered);
+        }
+
+        window.onload = function() {
+            renderFilterOptions();
+            renderWeapons(weaponsData);
+        };
+    </script>
+</body>
+</html>
+
