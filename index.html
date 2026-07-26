@@ -71,10 +71,11 @@
             </button>
         </div>
         <nav class="flex flex-col space-y-2">
-            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl bg-slate-800 text-splat-yellow font-bold text-xs flex items-center gap-2.5">
+            <a href="index.html" class="py-2.5 px-3 rounded-xl bg-slate-800 text-splat-yellow font-bold text-xs flex items-center gap-2.5">
                 <i class="fa-solid fa-house w-4"></i> TOP画面
             </a>
-            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+            <!-- 武器一覧へのリンクを weapon.html に修正 -->
+            <a href="weapon.html" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
                 <i class="fa-solid fa-gun w-4 text-slate-400"></i> 武器一覧
             </a>
             <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
@@ -113,7 +114,6 @@
                 <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <i class="fa-solid fa-gamepad text-splat-yellow"></i> スケジュール一覧
                 </h2>
-                <!-- 「評価？」から「？」を削除して「評価」に変更 -->
                 <button onclick="openRatingInfoModal()" class="text-xs font-bold text-splat-yellow bg-slate-800/80 hover:bg-slate-700 px-3 py-1 rounded-full border border-slate-700 transition active:scale-95 flex items-center gap-1">
                     <i class="fa-solid fa-circle-info"></i> 評価
                 </button>
@@ -134,7 +134,7 @@
 
     </main>
 
-    <!-- Modal 0: Rating Info Modal (背景ぼかし無し) -->
+    <!-- Modal 0: Rating Info Modal -->
     <div id="rating-info-modal" class="fixed inset-0 z-50 bg-slate-950/70 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -739,7 +739,6 @@
                             <span class="font-bold text-slate-200">${sch.startTime} ~ ${sch.endTime}</span>
                         </div>
                     </div>
-                    <!-- 横並び（2カラム） -->
                     <div class="grid grid-cols-2 gap-2">
                         ${stageCardsHtml}
                     </div>
