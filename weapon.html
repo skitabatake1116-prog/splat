@@ -28,7 +28,20 @@
         #side-menu.open {
             transform: translateX(0);
         }
-        /* メイン・サブ用の中央配置・ジグザグレイアウトコンテナ */
+        .snake-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding-bottom: 6px;
+            align-items: flex-start;
+        }
+        .snake-row {
+            display: flex;
+            gap: 6px;
+            width: max-content;
+        }
         .snake-center-container {
             display: flex;
             flex-direction: column;
@@ -42,20 +55,16 @@
             gap: 6px;
             justify-content: center;
         }
-        /* メイン用オフセット（2行目の開始を美しくずらす） */
         .main-row-2-offset {
             padding-left: 21px;
             padding-right: 21px;
         }
-        /* サブ用オフセット（1行目右端、2行目左端にバランスよく空白を作る） */
         .sub-row-1-offset {
             padding-right: 21px;
         }
         .sub-row-2-offset {
             padding-left: 21px;
         }
-
-        /* スペシャル用の横スクロール波状レイアウト */
         .snake-scroll-container {
             display: flex;
             flex-direction: column;
@@ -100,7 +109,8 @@
             </button>
         </div>
         <nav class="flex flex-col space-y-2">
-            <a href="sub.html" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+            <!-- TOP画面へのリンクを index.html に修正 -->
+            <a href="index.html" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
                 <i class="fa-solid fa-house w-4 text-slate-400"></i> TOP画面
             </a>
             <a href="weapon.html" class="py-2.5 px-3 rounded-xl bg-slate-800 text-splat-yellow font-bold text-xs flex items-center gap-2.5">
@@ -438,7 +448,7 @@
                 centerDiv.className = "snake-center-container";
 
                 const rowDiv1 = document.createElement('div');
-                rowDiv1.className = "snake-center-row sub-row-1-offset";
+                rowDiv1.className = "snake-center-row";
                 row1.forEach(name => { rowDiv1.appendChild(createFilterButton(name)); });
                 centerDiv.appendChild(rowDiv1);
 
