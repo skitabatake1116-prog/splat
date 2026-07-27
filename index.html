@@ -17,6 +17,7 @@
         .text-splat-yellow { color: #eaff3d; }
         .bg-splat-purple { background-color: #603bff; }
         .text-splat-purple { color: #603bff; }
+        .bg-salmon-orange { background-color: #ff6b00; }
         .glass-card {
             background: rgba(26, 35, 50, 0.75);
             backdrop-filter: blur(12px);
@@ -49,7 +50,7 @@
             <h1 class="text-base font-black tracking-wider text-white">X Match Checker</h1>
         </div>
         <div class="flex items-center gap-2">
-            <button id="refresh-btn" onclick="fetchSchedule()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-full flex items-center gap-1.5 transition active:scale-95">
+            <button id="refresh-btn" onclick="fetchAllSchedules()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-full flex items-center gap-1.5 transition active:scale-95">
                 <i class="fa-solid fa-rotate" id="refresh-icon"></i>
                 <span>更新</span>
             </button>
@@ -74,11 +75,10 @@
             <a href="index.html" class="py-2.5 px-3 rounded-xl bg-slate-800 text-splat-yellow font-bold text-xs flex items-center gap-2.5">
                 <i class="fa-solid fa-house w-4"></i> TOP画面
             </a>
-            <!-- 武器一覧へのリンクを weapon.html に修正 -->
             <a href="weapon.html" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
                 <i class="fa-solid fa-gun w-4 text-slate-400"></i> 武器一覧
             </a>
-            <a href="myweapon.html" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+            <a href="myweapon.html" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
                 <i class="fa-solid fa-star w-4 text-slate-400"></i> My武器
             </a>
             <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
@@ -119,8 +119,9 @@
                 </button>
             </div>
 
+            <!-- スケジュール表示コンテナ -->
             <div id="current-schedules-list" class="space-y-6">
-                <!-- Dynamic Stage Cards -->
+                <!-- Dynamic Cards -->
             </div>
         </section>
 
@@ -292,7 +293,13 @@
             'Bluefin Depot': 'ネギトロ炭鉱',
             'Marlin Airport': 'カジキ空港',
             'Lemuria Hub': 'リュウグウターミナル',
-            'Urchin Underpass': 'デカライン高架下'
+            'Urchin Underpass': 'デカライン高架下',
+            'Sockeye Station': 'アラマキ砦',
+            'Salmonid Smokeyard': 'すじこ滑走路',
+            'Spawning Grounds': 'シェケナダム',
+            'Gone Fission Hydroplant': 'トキシラズ不都合所',
+            'Jammin\' Salmon Junction': 'ムニエール海洋発電所',
+            'Bonerattle Arena': 'どんぴこ闘技場'
         };
 
         const RATING_COLORS = {
@@ -336,6 +343,7 @@
         let userRatings = JSON.parse(localStorage.getItem('splat3_xmatch_weapon_ratings') || '{}');
 
         let schedulesList = [];
+        let coopSchedule = null;
         let selectedSettingsRule = 'AREA';
         let selectedSettingsWeaponIdx = 0;
 
@@ -520,64 +528,6 @@
             renderSchedules();
         }
 
-        function renderVisualFallbackCard(stageName, colorGradient, rating, ratingBadgeColor) {
-            return `
-                <div class="w-full h-32 rounded-2xl relative overflow-hidden bg-gradient-to-br ${colorGradient || 'from-slate-800 to-slate-950'} border border-white/10 shadow-lg flex items-center justify-center">
-                    <div class="absolute bottom-2 left-2 z-20 pointer-events-none pr-10">
-                        <span class="text-white font-black text-xs sm:text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-tight block truncate">${stageName}</span>
-                    </div>
-                    <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/10 shadow pointer-events-none">
-                        <span class="text-[9px] text-slate-300 font-bold">評価</span>
-                        <span class="w-6 h-6 rounded-md ${ratingBadgeColor} flex items-center justify-center font-black text-xs shadow">${rating}</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        function handleImageError(imgEl, colorGradient, stageName, rating, ratingBadgeColor) {
-            const parent = imgEl.parentElement;
-            if (!parent) return;
-            parent.outerHTML = renderVisualFallbackCard(stageName, colorGradient, rating, ratingBadgeColor);
-        }
-
-        function getStageImageHtml(stageMeta, directApiImage, stageName, rating, ratingBadgeColor) {
-            const colorGradient = stageMeta?.color || 'from-slate-800 to-slate-950';
-            const targetUrl = directApiImage || stageMeta?.img || '';
-
-            return `
-                <div class="w-full h-32 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
-                    <img src="${targetUrl}" alt="" 
-                         onerror="handleImageError(this, '${colorGradient}', '${stageName}', '${rating}', '${ratingBadgeColor}');"
-                         class="w-full h-full object-cover brightness-95 hover:scale-105 transition duration-300" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent pointer-events-none"></div>
-                    <div class="absolute bottom-2 left-2 z-20 pointer-events-none pr-2">
-                        <span class="text-white font-black text-xs sm:text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-tight block truncate">${stageName}</span>
-                    </div>
-                    <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/15 shadow-xl pointer-events-none">
-                        <span class="text-[9px] text-slate-300 font-bold">評価</span>
-                        <span class="w-6 h-6 rounded-md ${ratingBadgeColor} flex items-center justify-center font-black text-xs shadow">${rating}</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        function getSettingsStageImageHtml(stageMeta, stageName) {
-            const colorGradient = stageMeta?.color || 'from-slate-800 to-slate-950';
-            const targetUrl = stageMeta?.img || '';
-
-            return `
-                <div class="w-full h-20 rounded-xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
-                    <img src="${targetUrl}" alt="" 
-                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-20 rounded-xl bg-gradient-to-br ${colorGradient} flex items-end p-2 relative overflow-hidden\'><div class=\'absolute bottom-1.5 left-2 z-20 pr-3\'><span class=\'text-white font-black text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] block truncate\'>${stageName}</span></div></div>';"
-                         class="w-full h-full object-cover brightness-95" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none"></div>
-                    <div class="absolute bottom-1.5 left-2 z-20 pointer-events-none pr-3">
-                        <span class="text-white font-black text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide block truncate">${stageName}</span>
-                    </div>
-                </div>
-            `;
-        }
-
         function formatIsoTime(isoStr) {
             if (!isoStr) return '';
             const date = new Date(isoStr);
@@ -591,28 +541,26 @@
             return STAGE_TRANSLATIONS[rawName] || rawName;
         }
 
-        async function fetchSchedule() {
+        async function fetchAllSchedules() {
             const icon = document.getElementById('refresh-icon');
             if (icon) icon.classList.add('fa-spin');
 
+            // 1. Xマッチスケジュールの取得
             try {
-                const res = await fetch('https://splatoon3.ink/data/schedules.json');
-                if (!res.ok) throw new Error('splatoon3.ink fetch failed');
+                const res = await fetch('https://spla3.yuu26.com/api/x');
+                if (!res.ok) throw new Error('spla3 x api failed');
                 const json = await res.json();
                 
-                const xSchedules = json.data?.xSchedules?.nodes || [];
-                if (xSchedules.length > 0) {
-                    schedulesList = xSchedules.slice(0, 3).map((match, idx) => {
-                        const settings = match.xMatchSetting;
-                        const ruleRaw = settings?.vsRule?.name || 'Splat Zones';
-                        const ruleName = RULE_TRANSLATIONS[ruleRaw] || settings?.vsRule?.name || 'ガチエリア';
-                        
-                        const stages = (settings?.vsStages || []).map(stg => {
-                            const translatedName = translateStageName(stg.name);
+                const results = json.results || [];
+                if (results.length > 0) {
+                    schedulesList = results.slice(0, 3).map((match, idx) => {
+                        const ruleName = match.rule?.name || 'ガチエリア';
+                        const stages = (match.stages || []).map(stg => {
+                            const translatedName = stg.name;
                             const foundMeta = STAGES.find(s => s.name === translatedName);
                             return {
                                 name: translatedName,
-                                image: foundMeta?.img || ''
+                                image: stg.image || foundMeta?.img || ''
                             };
                         });
 
@@ -625,73 +573,100 @@
                             label: label,
                             ruleName: ruleName,
                             stages: stages,
-                            startTime: formatIsoTime(match.startTime),
-                            endTime: formatIsoTime(match.endTime)
+                            startTime: formatIsoTime(match.start_time),
+                            endTime: formatIsoTime(match.end_time)
                         };
                     });
-
-                    renderSchedules();
-                    return;
                 }
-                throw new Error('Schedules format invalid');
             } catch (err) {
-                console.warn('Primary API error, trying backup API', err);
-                fetchBackupSchedule();
-            } finally {
-                if (icon) icon.classList.remove('fa-spin');
+                console.warn('Spla3 X API error, trying fallback', err);
+                try {
+                    const resInk = await fetch('https://splatoon3.ink/data/schedules.json');
+                    const jsonInk = await resInk.json();
+                    const xSchedules = jsonInk.data?.xSchedules?.nodes || [];
+                    if (xSchedules.length > 0) {
+                        schedulesList = xSchedules.slice(0, 3).map((match, idx) => {
+                            const settings = match.xMatchSetting;
+                            const ruleRaw = settings?.vsRule?.name || 'Splat Zones';
+                            const ruleName = RULE_TRANSLATIONS[ruleRaw] || 'ガチエリア';
+                            const stages = (settings?.vsStages || []).map(stg => {
+                                const translatedName = translateStageName(stg.name);
+                                const foundMeta = STAGES.find(s => s.name === translatedName);
+                                return { name: translatedName, image: foundMeta?.img || '' };
+                            });
+                            let label = '現在開催中';
+                            if (idx === 1) label = '次のスケジュール';
+                            if (idx === 2) label = '次の次のスケジュール';
+                            return {
+                                isCurrent: idx === 0,
+                                label: label,
+                                ruleName: ruleName,
+                                stages: stages,
+                                startTime: formatIsoTime(match.startTime),
+                                endTime: formatIsoTime(match.endTime)
+                            };
+                        });
+                    }
+                } catch (e) {
+                    console.error('All X schedules failed', e);
+                }
             }
-        }
 
-        async function fetchBackupSchedule() {
+            // 2. サーモンラン情報の取得
             try {
-                const res = await fetch('https://spla2.yuu26.com/3/x/now');
-                if (!res.ok) throw new Error('Backup API error');
-                const data = await res.json();
-                
-                if (data.results && data.results.length > 0) {
-                    const activeMatch = data.results[0];
-                    const stages = (activeMatch.stages || []).map(stg => {
-                        const translatedName = translateStageName(stg.name);
-                        const foundMeta = STAGES.find(s => s.name === translatedName);
-                        return {
-                            name: translatedName,
-                            image: foundMeta?.img || ''
+                const resCoop = await fetch('https://spla3.yuu26.com/api/coop-grouping/now');
+                if (resCoop.ok) {
+                    const coopJson = await resCoop.json();
+                    const results = coopJson.results || [];
+                    if (results.length > 0) {
+                        const cur = results[0];
+                        const setting = cur.setting || cur;
+                        const stage = setting.stage || {};
+                        const weapons = (setting.weapons || []).map(w => ({
+                            name: w.name || '',
+                            image: w.image || ''
+                        }));
+
+                        const formatCoopTime = (iso) => {
+                            if (!iso) return '';
+                            const d = new Date(iso);
+                            return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                         };
-                    });
-                    
-                    schedulesList = [{
-                        isCurrent: true,
-                        label: '現在開催中',
-                        ruleName: activeMatch.rule?.name || activeMatch.rule || 'ガチエリア',
-                        stages: stages.length > 0 ? stages : [{ name: 'ユノハナ大渓谷', image: STAGES[0].img }, { name: 'コンブトラック', image: STAGES[16].img }],
-                        startTime: activeMatch.start_time ? activeMatch.start_time.split(' ')[1]?.substring(0, 5) : '',
-                        endTime: activeMatch.end_time ? activeMatch.end_time.split(' ')[1]?.substring(0, 5) : ''
-                    }];
-                    renderSchedules();
-                    return;
+
+                        coopSchedule = {
+                            label: 'サーモンラン・オープン',
+                            startTime: formatCoopTime(cur.start_time),
+                            endTime: formatCoopTime(cur.end_time),
+                            stageName: stage.name || 'アラマキ砦',
+                            stageImg: stage.image || '',
+                            weapons: weapons
+                        };
+                    }
                 }
             } catch (err) {
-                console.warn('Backup API failed, using default state', err);
+                console.warn('Spla3 Coop API error', err);
             }
-            useFallbackSchedule();
+
+            renderSchedules();
+            if (icon) icon.classList.remove('fa-spin');
         }
 
-        function useFallbackSchedule() {
-            const now = new Date();
-            let hour = now.getHours();
-            const startHour = (hour % 2 === 1) ? hour : hour - 1;
-            const endHour = (startHour + 2) % 24;
-            const formatHour = (h) => (h < 0 ? h + 24 : h).toString().padStart(2, '0');
-
-            schedulesList = [{
-                isCurrent: true,
-                label: '現在開催中',
-                ruleName: RULES.AREA,
-                stages: [{ name: "ユノハナ大渓谷", image: STAGES[0].img }, { name: "コンブトラック", image: STAGES[16].img }],
-                startTime: `${formatHour(startHour)}:00`,
-                endTime: `${formatHour(endHour)}:00`
-            }];
-            renderSchedules();
+        function renderStageCard(stageName, directApiImage, rating, ratingBadgeColor) {
+            return `
+                <div class="w-full h-32 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
+                    <img src="${directApiImage}" alt="" 
+                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-32 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center relative\'><span class=\'text-white font-black text-xs\'>${stageName}</span></div>';"
+                         class="w-full h-full object-cover brightness-95" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent pointer-events-none"></div>
+                    <div class="absolute bottom-2 left-2 z-20 pointer-events-none pr-2">
+                        <span class="text-white font-black text-xs sm:text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-tight block truncate">${stageName}</span>
+                    </div>
+                    <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/15 shadow-xl pointer-events-none">
+                        <span class="text-[9px] text-slate-300 font-bold">評価</span>
+                        <span class="w-6 h-6 rounded-md ${ratingBadgeColor} flex items-center justify-center font-black text-xs shadow">${rating}</span>
+                    </div>
+                </div>
+            `;
         }
 
         function getRuleKeyByName(name) {
@@ -705,6 +680,50 @@
             const listContainer = document.getElementById('current-schedules-list');
             listContainer.innerHTML = '';
 
+            // 1. サーモンランのカードを挿入（「支給武器」文言を削除）
+            if (coopSchedule) {
+                let weaponsHtml = '';
+                coopSchedule.weapons.forEach(w => {
+                    weaponsHtml += `
+                        <div class="w-8 h-8 rounded-lg bg-slate-950/80 border border-slate-700/60 flex items-center justify-center p-0.5 shadow" title="${w.name}">
+                            <img src="${w.image}" alt="${w.name}" class="w-full h-full object-contain" onerror="this.style.display='none'">
+                        </div>
+                    `;
+                });
+
+                const coopCard = document.createElement('div');
+                coopCard.className = "space-y-2 p-3 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl";
+                coopCard.innerHTML = `
+                    <div class="flex justify-between items-center px-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-salmon-orange text-white">開催中</span>
+                            <span class="text-xs font-black tracking-wider uppercase px-2.5 py-0.5 rounded-lg bg-orange-600 text-white shadow-sm">
+                                ${coopSchedule.label}
+                            </span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 font-medium">
+                            <span class="font-bold text-slate-200">${coopSchedule.startTime} ~ ${coopSchedule.endTime}</span>
+                        </div>
+                    </div>
+                    <!-- ステージと支給武器の表示エリア -->
+                    <div class="grid grid-cols-1 gap-2">
+                        <div class="w-full h-32 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
+                            <img src="${coopSchedule.stageImg}" alt="" class="w-full h-full object-cover brightness-95" onerror="this.style.display='none'" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent pointer-events-none"></div>
+                            <div class="absolute bottom-2 left-2 z-20 pointer-events-none pr-2">
+                                <span class="text-white font-black text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-tight block">${coopSchedule.stageName}</span>
+                            </div>
+                            <!-- 支給武器欄（「支給武器」文言削除） -->
+                            <div class="absolute top-2 right-2 z-20 flex items-center gap-1.5 bg-slate-950/40 backdrop-blur-md px-2 py-1 rounded-xl border border-white/20 shadow-xl">
+                                ${weaponsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(coopCard);
+            }
+
+            // 2. Xマッチスケジュールのカードを描画
             schedulesList.forEach((sch) => {
                 const ruleKey = getRuleKeyByName(sch.ruleName);
                 const activeWeaponRatings = (userRatings[selectedWeaponIndex] && userRatings[selectedWeaponIndex][ruleKey]) ? userRatings[selectedWeaponIndex][ruleKey] : {};
@@ -712,15 +731,12 @@
                 let stageCardsHtml = '';
                 sch.stages.forEach(stg => {
                     const stgName = translateStageName(stg.name);
-                    const stageMeta = STAGES.find(s => s.name === stgName) || { name: stgName };
-                    const apiImage = stg.image || stageMeta.img || '';
-                    
-                    const rating = activeWeaponRatings[stgName] || activeWeaponRatings[stageMeta.name] || 'B';
+                    const rating = activeWeaponRatings[stgName] || 'B';
                     const ratingBadgeColor = RATING_COLORS[rating] || 'bg-slate-700';
 
                     stageCardsHtml += `
                         <div>
-                            ${getStageImageHtml(stageMeta, apiImage, stgName, rating, ratingBadgeColor)}
+                            ${renderStageCard(stgName, stg.image, rating, ratingBadgeColor)}
                         </div>
                     `;
                 });
@@ -829,13 +845,30 @@
             renderSettingsStageList();
         }
 
+        function getSettingsStageImageHtml(stageMeta, stageName) {
+            const colorGradient = stageMeta?.color || 'from-slate-800 to-slate-950';
+            const targetUrl = stageMeta?.img || '';
+
+            return `
+                <div class="w-full h-20 rounded-xl relative overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
+                    <img src="${targetUrl}" alt="" 
+                         onerror="this.parentElement.innerHTML='<div class=\'w-full h-20 rounded-xl bg-gradient-to-br ${colorGradient} flex items-end p-2 relative overflow-hidden\'><div class=\'absolute bottom-1.5 left-2 z-20 pr-3\'><span class=\'text-white font-black text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] block truncate\'>${stageName}</span></div></div>';"
+                         class="w-full h-full object-cover brightness-95" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none"></div>
+                    <div class="absolute bottom-1.5 left-2 z-20 pointer-events-none pr-3">
+                        <span class="text-white font-black text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide block truncate">${stageName}</span>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderSettingsStageList() {
             const list = document.getElementById('stage-rating-list');
             list.innerHTML = '';
 
             const activeWeaponRatings = (userRatings[selectedSettingsWeaponIdx] && userRatings[selectedSettingsWeaponIdx][selectedSettingsRule]) ? userRatings[selectedSettingsWeaponIdx][selectedSettingsRule] : {};
 
-            STAGES.forEach(stg => {
+    STAGES.forEach(stg => {
                 const currentRating = activeWeaponRatings[stg.name] || 'B';
                 const row = document.createElement('div');
                 row.className = "p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/80 space-y-2 shadow-lg";
@@ -884,7 +917,7 @@
         window.onload = function() {
             initRatings();
             renderWeaponTabs();
-            fetchSchedule();
+            fetchAllSchedules();
         };
     </script>
 </body>
