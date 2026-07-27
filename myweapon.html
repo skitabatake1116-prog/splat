@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>スプラ3 My武器・ギアシミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #0b0f19;
+            color: #f8fafc;
+        }
+        .bg-splat-yellow { background-color: #eaff3d; }
+        .text-splat-yellow { color: #eaff3d; }
+        .glass-card {
+            background: rgba(26, 35, 50, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        #side-menu {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(100%);
+        }
+        #side-menu.open {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="pb-24">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-splat-yellow text-slate-950 font-black px-4 py-2 rounded-full shadow-2xl text-xs flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-10px]">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toast-message">保存しました！</span>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 glass-card px-4 py-3 flex justify-between items-center border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+            <h1 class="text-xs font-black tracking-wider text-white">MY武器 & ギアシミュレーター</h1>
+        </div>
+        <button onclick="toggleSideMenu()" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition active:scale-95">
+            <i class="fa-solid fa-bars text-xs"></i>
+        </button>
+    </header>
+
+    <!-- Side Menu -->
+    <div id="side-menu-overlay" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm hidden transition-opacity opacity-0" onclick="toggleSideMenu()"></div>
+    <div id="side-menu" class="fixed top-0 right-0 bottom-0 z-50 w-1/2 bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col p-5 space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <span class="font-bold text-sm text-white flex items-center gap-2">
+                <i class="fa-solid fa-compass text-splat-yellow"></i> メニュー
+            </span>
+            <button onclick="toggleSideMenu()" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-white">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+        <nav class="flex flex-col space-y-2">
+            <a href="index.html" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-house w-4 text-slate-400"></i> TOP画面
+            </a>
+            <a href="weapon.html" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-gun w-4 text-slate-400"></i> 武器一覧
+            </a>
+            <a href="myweapon.html" class="py-2.5 px-3 rounded-xl bg-slate-800 text-splat-yellow font-bold text-xs flex items-center gap-2.5">
+                <i class="fa-solid fa-star w-4"></i> My武器
+            </a>
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-link w-4 text-slate-400"></i> リンク4
+            </a>
+            <a href="#" onclick="toggleSideMenu();" class="py-2.5 px-3 rounded-xl hover:bg-slate-800/60 text-slate-300 font-medium text-xs flex items-center gap-2.5 transition">
+                <i class="fa-solid fa-link w-4 text-slate-400"></i> リンク5
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Container -->
+    <main class="max-w-md mx-auto p-3 space-y-4">
+
+        <!-- CSV Backup / Restore Section -->
+        <div class="glass-card rounded-2xl p-3 space-y-2">
+            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">マイコーデのバックアップ</span>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="exportCSV()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-file-csv text-splat-yellow"></i> CSV保存
+                </button>
+                <label class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer">
+                    <i class="fa-solid fa-upload text-splat-yellow"></i> CSV読込
+                    <input type="file" id="import-file" accept=".csv,.txt" onchange="importCSV(event)" class="hidden">
+                </label>
+            </div>
+        </div>
+
+        <!-- 6 Tabs for Sets -->
+        <div class="grid grid-cols-6 gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800" id="set-tabs-container">
+            <!-- Dynamic Set Tabs (1~6) -->
+        </div>
+
+        <!-- Weapon Selector Card -->
+        <div class="glass-card rounded-2xl p-3 space-y-2">
+            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">ブキ選択</span>
+
+            <div class="flex items-center justify-between bg-slate-950/80 p-3 rounded-2xl border border-slate-800 gap-3 min-h-[76px]">
+                <div class="flex items-center flex-1">
+                    <select id="weapon-select" onchange="onWeaponChange()" class="w-full bg-transparent text-xs font-black text-white focus:outline-none cursor-pointer whitespace-normal leading-relaxed h-12">
+                        <!-- Dynamic weapon options -->
+                    </select>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
+                    <div class="w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center border border-slate-800 p-1">
+                        <img id="selected-main-icon" src="https://splatoon3.ink/assets/favicon.ico" class="w-full h-full object-contain" alt="">
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-slate-950 flex items-center justify-center border border-slate-800 p-1">
+                        <img id="selected-sub-icon" src="" class="w-full h-full object-contain" alt="" onerror="this.style.display='none'">
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-slate-950 flex items-center justify-center border border-slate-800 p-1">
+                        <img id="selected-sp-icon" src="" class="w-full h-full object-contain" alt="" onerror="this.style.display='none'">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gear Parts (Head, Clothes, Shoes) -->
+        <div class="grid grid-cols-3 gap-2" id="gear-parts-container">
+            <!-- Dynamic Head, Clothes, Shoes Cards -->
+        </div>
+
+        <!-- Gear Power Palette -->
+        <div class="glass-card rounded-2xl p-3 space-y-3">
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ギアパワー一覧 (タップまたはドラッグ)</span>
+                <button onclick="clearCurrentSet()" class="text-[10px] text-rose-400 hover:underline font-bold">すべてクリア</button>
+            </div>
+
+            <!-- パレット本体 -->
+            <div class="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-3" id="power-palette-container">
+                <!-- 動的生成 -->
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const subIdMap = {
+            "スプラッシュボム": "024", "キューバンボム": "025", "クイックボム": "030",
+            "スプリンクラー": "032", "スプラッシュシールド": "028", "タンサンボム": "033",
+            "カーリングボム": "026", "ロボットボム": "031", "ジャンプビーコン": "036",
+            "ポイントセンサー": "037", "トラップ": "035", "ポイズンミスト": "027",
+            "ラインマーカー": "029", "トーピード": "034"
+        };
+
+        const specialIdMap = {
+            "ウルトラショット": "027", "グレートバリア": "025", "ショクワンダー": "026",
+            "マルチミサイル": "034", "アメフラシ": "036", "ナイスダマ": "038",
+            "ホップソナー": "032", "キューインキ": "029", "メガホンレーザー5.1ch": "028",
+            "ジェットパック": "035", "ウルトラハンコ": "037", "カニタンク": "024",
+            "サメライド": "033", "トリプルトルネード": "030", "エナジースタンド": "031",
+            "デコイチラシ": "040", "テイオウイカ": "039", "ウルトラチャクチ": "042",
+            "スミナガシート": "041"
+        };
+
+        const GEAR_POWERS = [
+            { id: "3", name: "メイン効率", type: "any" },
+            { id: "19", name: "サブ効率", type: "any" },
+            { id: "13", name: "インク回復", type: "any" },
+            { id: "20", name: "ヒト速", type: "any" },
+            { id: "22", name: "イカ速", type: "any" },
+            { id: "25", name: "アク強", type: "any" },
+            { id: "21", name: "スペ強", type: "any" },
+            { id: "23", name: "スペ増", type: "any" },
+            { id: "4", name: "スペ減", type: "any" },
+            { id: "8", name: "サブ性能", type: "any" },
+            { id: "24", name: "復短", type: "any" },
+            { id: "12", name: "ジャン短", type: "any" },
+            { id: "14", name: "インク軽減", type: "any" },
+            { id: "26", name: "サブ減", type: "any" },
+            { id: "5", name: "スタダ", type: "head_main" },
+            { id: "1", name: "ラスパ", type: "head_main" },
+            { id: "6", name: "カムバ", type: "head_main" },
+            { id: "10", name: "逆境", type: "head_main" },
+            { id: "2", name: "イカニン", type: "clothes_main" },
+            { id: "11", name: "リベンジ", type: "clothes_main" },
+            { id: "17", name: "サーマルインク", type: "clothes_main" },
+            { id: "7", name: "ペナアップ", type: "clothes_main" },
+            { id: "15", name: "ステジャン", type: "shoes_main" },
+            { id: "9", name: "対物", type: "shoes_main" },
+            { id: "16", name: "受け身", type: "shoes_main" }
+        ];
+
+        const rawWeaponsData = [
+            { id: 236, name: "スプラシューター", sub: "キューバンボム", sp: "ウルトラショット" },
+            { id: 298, name: "スプラシューターコラボ", sub: "スプラッシュボム", sp: "トリプルトルネード" },
+            { id: 389, name: "スプラシューター煌", sub: "クイックボム", sp: "テイオウイカ" },
+            { id: 238, name: ".96ガロン", sub: "スプリンクラー", sp: "キューインキ" },
+            { id: 300, name: ".96ガロンデコ", sub: "スプラッシュシールド", sp: "テイオウイカ" },
+            { id: 392, name: ".96ガロン爪", sub: "ラインマーカー", sp: "エナジースタンド" },
+            { id: 240, name: "シャープマーカー", sub: "クイックボム", sp: "カニタンク" },
+            { id: 307, name: "シャープマーカーネオ", sub: "キューバンボム", sp: "トリプルトルネード" },
+            { id: 374, name: "シャープマーカーGECK", sub: "ポイズンミスト", sp: "アメフラシ" },
+            { id: 246, name: "わかばシューター", sub: "スプラッシュボム", sp: "グレートバリア" },
+            { id: 296, name: "もみじシューター", sub: "トーピード", sp: "ホップソナー" },
+            { id: 247, name: ".52ガロン", sub: "スプラッシュシールド", sp: "メガホンレーザー5.1ch" },
+            { id: 354, name: ".52ガロンデコ", sub: "カーリングボム", sp: "スミナガシート" },
+            { id: 248, name: "H3リールガン", sub: "ポイントセンサー", sp: "エナジースタンド" },
+            { id: 313, name: "H3リールガンD", sub: "スプラッシュシールド", sp: "グレートバリア" },
+            { id: 386, name: "H3リールガンSNAK", sub: "キューバンボム", sp: "トリプルトルネード" },
+            { id: 249, name: "L3リールガン", sub: "カーリングボム", sp: "カニタンク" },
+            { id: 305, name: "L3リールガンD", sub: "クイックボム", sp: "ウルトラハンコ" },
+            { id: 400, name: "L3リールガン箔", sub: "スプラッシュボム", sp: "ジェットパック" },
+            { id: 250, name: "N-ZAP85", sub: "キューバンボム", sp: "エナジースタンド" },
+            { id: 301, name: "N-ZAP89", sub: "ロボットボム", sp: "デコイチラシ" },
+            { id: 251, name: "ジェットスイーパー", sub: "ラインマーカー", sp: "キューインキ" },
+            { id: 308, name: "ジェットスイーパーカスタム", sub: "ポイズンミスト", sp: "アメフラシ" },
+            { id: 384, name: "ジェットスイーパーCOBR", sub: "クイックボム", sp: "ウルトラチャクチ" },
+            { id: 252, name: "プライムシューター", sub: "ラインマーカー", sp: "カニタンク" },
+            { id: 293, name: "プライムシューターコラボ", sub: "キューバンボム", sp: "ナイスダマ" },
+            { id: 380, name: "プライムシューターFRZN", sub: "スプラッシュボム", sp: "マルチミサイル" },
+            { id: 253, name: "プロモデラーMG", sub: "タンサンボム", sp: "サメライド" },
+            { id: 289, name: "プロモデラーRG", sub: "スプリンクラー", sp: "ナイスダマ" },
+            { id: 391, name: "プロモデラー彩", sub: "クイックボム", sp: "スミナガシート" },
+            { id: 254, name: "ボールドマーカー", sub: "カーリングボム", sp: "ウルトラハンコ" },
+            { id: 310, name: "ボールドマーカーネオ", sub: "ジャンプビーコン", sp: "メガホンレーザー5.1ch" },
+            { id: 255, name: "ボトルガイザー", sub: "スプラッシュシールド", sp: "ウルトラショット" },
+            { id: 333, name: "ボトルガイザーフォイル", sub: "ロボットボム", sp: "スミナガシート" },
+            { id: 286, name: "スペースシューター", sub: "ポイントセンサー", sp: "メガホンレーザー5.1ch" },
+            { id: 317, name: "スペースシューターコラボ", sub: "トラップ", sp: "ジェットパック" },
+            { id: 234, name: "ロングブラスター", sub: "キューバンボム", sp: "ホップソナー" },
+            { id: 239, name: "ホットブラスター", sub: "ロボットボム", sp: "グレートバリア" },
+            { id: 340, name: "ホットブラスターカスタム", sub: "ポイントセンサー", sp: "ウルトラチャクチ" },
+            { id: 390, name: "ホットブラスター艶", sub: "ジャンプビーコン", sp: "カニタンク" },
+            { id: 244, name: "クラッシュブラスター", sub: "スプラッシュボム", sp: "ウルトラショット" },
+            { id: 302, name: "クラッシュブラスターネオ", sub: "カーリングボム", sp: "デコイチラシ" },
+            { id: 256, name: "Rブラスターエリート", sub: "ポイズンミスト", sp: "キューインキ" },
+            { id: 314, name: "Rブラスターエリートデコ", sub: "ラインマーカー", sp: "メガホンレーザー5.1ch" },
+            { id: 383, name: "RブラスターエリートWNTR", sub: "キューバンボム", sp: "エナジースタンド" },
+            { id: 257, name: "ノヴァブラスター", sub: "スプラッシュボム", sp: "ショクワンダー" },
+            { id: 294, name: "ノヴァブラスターネオ", sub: "タンサンボム", sp: "ウルトラハンコ" },
+            { id: 258, name: "ラピッドブラスター", sub: "トラップ", sp: "トリプルトルネード" },
+            { id: 306, name: "ラピッドブラスターデコ", sub: "トーピード", sp: "ジェットパック" },
+            { id: 311, name: "S-BLAST92", sub: "スプリンクラー", sp: "サメライド" },
+            { id: 337, name: "S-BLAST91", sub: "クイックボム", sp: "ナイスダマ" },
+            { id: 371, name: "ロングブラスターカスタム", sub: "スプラッシュボム", sp: "テイオウイカ" },
+            { id: 233, name: "ダイナモローラー", sub: "スプリンクラー", sp: "エナジースタンド" },
+            { id: 331, name: "ダイナモローラーテスラ", sub: "スプラッシュボム", sp: "デコイチラシ" },
+            { id: 403, name: "ダイナモローラー冥", sub: "ポイントセンサー", sp: "メガホンレーザー5.1ch" },
+            { id: 245, name: "スプラローラー", sub: "カーリングボム", sp: "グレートバリア" },
+            { id: 299, name: "スプラローラーコラボ", sub: "ジャンプビーコン", sp: "テイオウイカ" },
+            { id: 259, name: "ヴァリアブルローラー", sub: "トラップ", sp: "マルチミサイル" },
+            { id: 358, name: "ヴァリアブルローラーフォイル", sub: "キューバンボム", sp: "スミナガシート" },
+            { id: 260, name: "カーボンローラー", sub: "ロボットボム", sp: "ショクワンダー" },
+            { id: 297, name: "カーボンローラーデコ", sub: "クイックボム", sp: "ウルトラショット" },
+            { id: 375, name: "カーボンローラーANGL", sub: "タンサンボム", sp: "デコイチラシ" },
+            { id: 287, name: "ワイドローラー", sub: "スプラッシュシールド", sp: "キューインキ" },
+            { id: 321, name: "ワイドローラーコラボ", sub: "ラインマーカー", sp: "アメフラシ" },
+            { id: 399, name: "ワイドローラー惑", sub: "トーピード", sp: "ウルトラチャクチ" },
+            { id: 261, name: "パブロ", sub: "スプラッシュボム", sp: "メガホンレーザー5.1ch" },
+            { id: 291, name: "パブロ・ヒュー", sub: "トラップ", sp: "ウルトラハンコ" },
+            { id: 262, name: "ホクサイ", sub: "キューバンボム", sp: "ショクワンダー" },
+            { id: 324, name: "ホクサイ・ヒュー", sub: "ジャンプビーコン", sp: "アメフラシ" },
+            { id: 401, name: "ホクサイ彗", sub: "ロボットボム", sp: "テイオウイカ" },
+            { id: 312, name: "フィンセント", sub: "カーリングボム", sp: "ホップソナー" },
+            { id: 335, name: "フィンセント・ヒュー", sub: "ポイントセンサー", sp: "マルチミサイル" },
+            { id: 377, name: "フィンセントBRNZ", sub: "スプラッシュシールド", sp: "ウルトラショット" },
+            { id: 232, name: "リッター4K", sub: "トラップ", sp: "ホップソナー" },
+            { id: 361, name: "リッター4Kカスタム", sub: "ジャンプビーコン", sp: "テイオウイカ" },
+            { id: 362, name: "4Kスコープカスタム", sub: "ジャンプビーコン", sp: "テイオウイカ" },
+            { id: 243, name: "スプラチャージャー", sub: "スプラッシュボム", sp: "キューインキ" },
+            { id: 303, name: "スプラチャージャーコラボ", sub: "スプラッシュシールド", sp: "トリプルトルネード" },
+            { id: 381, name: "スプラチャージャーFRST", sub: "スプリンクラー", sp: "カニタンク" },
+            { id: 263, name: "14式竹筒銃・甲", sub: "ロボットボム", sp: "メガホンレーザー5.1ch" },
+            { id: 264, name: "スクイックリンα", sub: "ポイントセンサー", sp: "グレートバリア" },
+            { id: 356, name: "スククイックリンβ", sub: "ロボットボム", sp: "ショクワンダー" },
+            { id: 265, name: "ソイチューバー", sub: "トーピード", sp: "マルチミサイル" },
+            { id: 325, name: "ソイチューバーカスタム", sub: "タンサンボム", sp: "ウルトラハンコ" },
+            { id: 282, name: "スプラスコープ", sub: "スプラッシュボム", sp: "キューインキ" },
+            { id: 304, name: "スプラスコープコラボ", sub: "スプラッシュシールド", sp: "トリプルトルネード" },
+            { id: 382, name: "スプラスコープFRST", sub: "スプリンクラー", sp: "カニタンク" },
+            { id: 283, name: "4Kスコープ", sub: "トラップ", sp: "ホップソナー" },
+            { id: 288, name: "R-PEN/5H", sub: "スプリンクラー", sp: "エナジースタンド" },
+            { id: 332, name: "R-PEN/5B", sub: "スプラッシュシールド", sp: "アメフラシ" },
+            { id: 368, name: "14式竹筒銃・乙", sub: "タンサンボム", sp: "デコイチラシ" },
+            { id: 235, name: "スクリュースロッシャー", sub: "タンサンボム", sp: "ナイスダマ" },
+            { id: 329, name: "スクリュースロッシャーネオ", sub: "ポイントセンサー", sp: "ウルトラショット" },
+            { id: 266, name: "エクスプロッシャー", sub: "ポイントセンサー", sp: "アメフラシ" },
+            { id: 363, name: "エクスプロッシャーカスタム", sub: "スプラッシュシールド", sp: "ウルトラチャクチ" },
+            { id: 267, name: "オーバーフロッシャー", sub: "スプリンクラー", sp: "アメフラシ" },
+            { id: 327, name: "オーバーフロッシャーデコ", sub: "ラインマーカー", sp: "テイオウイカ" },
+            { id: 268, name: "バケットスロッシャー", sub: "スプラッシュボム", sp: "トリプルトルネード" },
+            { id: 290, name: "バケットスロッシャーデコ", sub: "ラインマーカー", sp: "ショクワンダー" },
+            { id: 269, name: "ヒッセン", sub: "ポイズンミスト", sp: "ジェットパック" },
+            { id: 309, name: "ヒッセン・ヒュー", sub: "タンサンボム", sp: "エナジースタンド" },
+            { id: 378, name: "ヒッセンASH", sub: "スプラッシュボム", sp: "スミナガシート" },
+            { id: 322, name: "モップリン", sub: "キューバンボム", sp: "サメライド" },
+            { id: 357, name: "モップリンD", sub: "ジャンプビーコン", sp: "ホップソナー" },
+            { id: 393, name: "モップリン角", sub: "カーリングボム", sp: "カニタンク" },
+            { id: 237, name: "ハイドラント", sub: "ロボットボム", sp: "ナイスダマ" },
+            { id: 396, name: "ハイドラント圧", sub: "スプリンクラー", sp: "グレートバリア" },
+            { id: 270, name: "クーゲルシュライバー", sub: "タンサンボム", sp: "ジェットパック" },
+            { id: 328, name: "クーゲルシュライバー・ヒュー", sub: "トラップ", sp: "キューインキ" },
+            { id: 271, name: "スプラスピナー", sub: "クイックボム", sp: "ウルトラハンコ" },
+            { id: 295, name: "スプラスピナーコラボ", sub: "ポイズンミスト", sp: "グレートバリア" },
+            { id: 385, name: "スプラスピナーPYTN", sub: "ジャンプビーコン", sp: "ウルトラショット" },
+            { id: 272, name: "ノーチラス47", sub: "ポイントセンサー", sp: "アメフラシ" },
+            { id: 359, name: "ノーチラス79", sub: "キューバンボム", sp: "ウルトラチャクチ" },
+            { id: 273, name: "バレルスピナー", sub: "スプリンクラー", sp: "ホップソナー" },
+            { id: 320, name: "バレルスピナーデコ", sub: "ポイントセンサー", sp: "テイオウイカ" },
+            { id: 323, name: "イグザミナー", sub: "カーリングボム", sp: "エナジースタンド" },
+            { id: 370, name: "イグザミナー・ヒュー", sub: "スプラッシュボム", sp: "カニタンク" },
+            { id: 373, name: "ハイドラントカスタム", sub: "トラップ", sp: "スミナガシート" },
+            { id: 242, name: "ケルビン525", sub: "スプラッシュシールド", sp: "ナイスダマ" },
+            { id: 360, name: "ケルビン525デコ", sub: "ポイントセンサー", sp: "ウルトラショット" },
+            { id: 274, name: "クアッドホッパーブラック", sub: "ロボットボム", sp: "サメライド" },
+            { id: 315, name: "クアッドホッパーホワイト", sub: "スプリンクラー", sp: "ショクワンダー" },
+            { id: 275, name: "スパッタリー", sub: "ジャンプビーコン", sp: "エナジースタンド" },
+            { id: 292, name: "スパッタリー・ヒュー", sub: "トーピード", sp: "サメライド" },
+            { id: 376, name: "スパッタリーOWL", sub: "スプラッシュボム", sp: "メガホンレーザー5.1ch" },
+            { id: 276, name: "スプラマニューバー", sub: "キューバンボム", sp: "カニタンク" },
+            { id: 339, name: "スプラマニューバーコラボ", sub: "カーリングボム", sp: "ウルトラチャクチ" },
+            { id: 398, name: "スプラマニューバー耀", sub: "タンサンボム", sp: "グレートバリア" },
+            { id: 277, name: "デュアルスイーパー", sub: "スプラッシュボム", sp: "ホップソナー" },
+            { id: 319, name: "デュアルスイーパーカスタム", sub: "ジャンプビーコン", sp: "デコイチラシ" },
+            { id: 394, name: "デュアルスイーパー蹄", sub: "ポイントセンサー", sp: "スミナガシート" },
+            { id: 355, name: "ガエンFF", sub: "トラップ", sp: "メガホンレーザー5.1ch" },
+            { id: 372, name: "ガエンFFカスタム", sub: "クイックボム", sp: "トリプルトルネード" },
+            { id: 241, name: "スパイガジェット", sub: "トラップ", sp: "サメライド" },
+            { id: 334, name: "スパイガジェットソレーラ", sub: "トーピード", sp: "スミナガシート" },
+            { id: 397, name: "スパイガジェット繚", sub: "カーリングボム", sp: "メガホンレーザー5.1ch" },
+            { id: 278, name: "キャンピングシェルター", sub: "ジャンプビーコン", sp: "キューインキ" },
+            { id: 316, name: "キャンピングシェルターソレーラ", sub: "トラップ", sp: "ウルトラショット" },
+            { id: 388, name: "キャンピングシェルターCREM", sub: "ポイズンミスト", sp: "デコイチラシ" },
+            { id: 279, name: "パラシェルター", sub: "スプリンクラー", sp: "トリプルトルネード" },
+            { id: 326, name: "パラシェルターソレーラ", sub: "ロボットボム", sp: "ジェットパック" },
+            { id: 353, name: "24式張替傘・甲", sub: "ラインマーカー", sp: "グレートバリア" },
+            { id: 369, name: "24式張替傘・乙", sub: "ポイズンミスト", sp: "ウルトラチャクチ" },
+            { id: 231, name: "トライストリンガー", sub: "ポイズンミスト", sp: "メガホンレーザー5.1ch" },
+            { id: 330, name: "トライストリンガーコラボ", sub: "スプリンクラー", sp: "デコイチラシ" },
+            { id: 402, name: "トライストリンガー燈", sub: "ラインマーカー", sp: "ジェットパック" },
+            { id: 284, name: "LACT-450", sub: "カーリングボム", sp: "マルチミサイル" },
+            { id: 336, name: "LACT-450デコ", sub: "スプラッシュシールド", sp: "サメライド" },
+            { id: 387, name: "LACT-450MILK", sub: "トーピード", sp: "ナイスダマ" },
+            { id: 364, name: "フルイドV", sub: "ロボットボム", sp: "ウルトラハンコ" },
+            { id: 365, name: "フルイドVカスタム", sub: "ポイントセンサー", sp: "ホップソナー" },
+            { id: 280, name: "ドライブワイパー", sub: "トーピード", sp: "ウルトラハンコ" },
+            { id: 318, name: "ドライブワイパーデコ", sub: "ジャンプビーコン", sp: "マルチミサイル" },
+            { id: 379, name: "ドライブワイパーRUST", sub: "カーリングボム", sp: "ウルトラショット" },
+            { id: 281, name: "ジムワイパー", sub: "クイックボム", sp: "ショクワンダー" },
+            { id: 338, name: "ジムワイパー・ヒュー", sub: "ポイズンミスト", sp: "カニタンク" },
+            { id: 395, name: "ジムワイパー封", sub: "ロボットボム", sp: "ナイスダマ" },
+            { id: 366, name: "デンタルワイパーミント", sub: "キューバンボム", sp: "グレートバリア" },
+            { id: 367, name: "デンタルワイパースミ", sub: "スプラッシュシールド", sp: "ジェットパック" }
+        ];
+
+        const weaponsList = rawWeaponsData
+            .filter(w => !w.name.includes("レプリカ"))
+            .map(w => ({
+                name: w.name,
+                mainId: w.id,
+                subId: subIdMap[w.sub] || "024",
+                spId: specialIdMap[w.sp] || "027"
+            }));
+
+        let mySets = JSON.parse(localStorage.getItem('splat3_my_gear_sets') || JSON.stringify([
+            { weapon: "スプラシューター", head: { main: "", subs: ["", "", ""] }, clothes: { main: "", subs: ["", "", ""] }, shoes: { main: "", subs: ["", "", ""] } },
+            { weapon: ".52ガロン", head: { main: "", subs: ["", "", ""] }, clothes: { main: "", subs: ["", "", ""] }, shoes: { main: "", subs: ["", "", ""] } },
+            { weapon: "ジムワイパー", head: { main: "", subs: ["", "", ""] }, clothes: { main: "", subs: ["", "", ""] }, shoes: { main: "", subs: ["", "", ""] } },
+            { weapon: "スプラローラー", head: { main: "", subs: ["", "", ""] }, clothes: { main: "", subs: ["", "", ""] }, shoes: { main: "", subs: ["", "", ""] } },
+            { weapon: "ボトルガイザー", head: { main: "", subs: ["", "", ""] }, clothes: { main: "", subs: ["", "", ""] }, shoes: { main: "", subs: ["", "", ""] } },
+            { weapon: "シャープマーカー", head: { main: "", subs: ["", "", ""] }, clothes: { main: "", subs: ["", "", ""] }, shoes: { main: "", subs: ["", "", ""] } }
+        ]));
+
+        let currentSetIndex = 0;
+        let activePowerSlot = { part: 'head', type: 'main', index: 0 };
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            if (!toast || !toastMsg) return;
+            toastMsg.textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+            }, 2000);
+        }
+
+        function toggleSideMenu() {
+            const menu = document.getElementById('side-menu');
+            const overlay = document.getElementById('side-menu-overlay');
+            if (menu.classList.contains('open')) {
+                menu.classList.remove('open');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            } else {
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                menu.classList.add('open');
+            }
+        }
+
+        function renderSetTabs() {
+            const container = document.getElementById('set-tabs-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                const isSelected = i === currentSetIndex;
+                const btn = document.createElement('button');
+                btn.onclick = () => {
+                    currentSetIndex = i;
+                    renderAll();
+                };
+                btn.className = `py-2 rounded-xl text-xs font-bold transition ${
+                    isSelected ? 'bg-splat-yellow text-slate-950 font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+                }`;
+                btn.textContent = `コーデ${i + 1}`;
+                container.appendChild(btn);
+            }
+        }
+
+        function renderWeaponSelect() {
+            const select = document.getElementById('weapon-select');
+            select.innerHTML = '';
+            const currentWeapon = mySets[currentSetIndex].weapon;
+
+            const exists = weaponsList.some(w => w.name === currentWeapon);
+            if (!exists && weaponsList.length > 0) {
+                mySets[currentSetIndex].weapon = weaponsList[0].name;
+            }
+
+            weaponsList.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w.name;
+                opt.textContent = w.name;
+                if (w.name === mySets[currentSetIndex].weapon) opt.selected = true;
+                select.appendChild(opt);
+            });
+            updateWeaponIcons(mySets[currentSetIndex].weapon);
+        }
+
+        function onWeaponChange() {
+            const select = document.getElementById('weapon-select');
+            mySets[currentSetIndex].weapon = select.value;
+            saveToStorage();
+            updateWeaponIcons(select.value);
+        }
+
+        function updateWeaponIcons(weaponName) {
+            const found = weaponsList.find(w => w.name === weaponName) || weaponsList[0];
+            if (!found) return;
+
+            const mainImg = document.getElementById('selected-main-icon');
+            const subImg = document.getElementById('selected-sub-icon');
+            const spImg = document.getElementById('selected-sp-icon');
+
+            mainImg.src = `https://api.ikaclo.ink/images/weapons/main/weapon_${found.mainId}.png`;
+            subImg.src = `https://api.ikaclo.ink/images/weapons/sub/sub_${found.subId}.png`;
+            spImg.src = `https://api.ikaclo.ink/images/weapons/special/special_${found.spId}.png`;
+
+            subImg.style.display = found.subId ? 'block' : 'none';
+            spImg.style.display = found.spId ? 'block' : 'none';
+        }
+
+        function renderGearParts() {
+            const container = document.getElementById('gear-parts-container');
+            container.innerHTML = '';
+
+            const partsMeta = [
+                { key: 'head', label: 'アタマ' },
+                { key: 'clothes', label: 'フク' },
+                { key: 'shoes', label: 'クツ' }
+            ];
+
+            const currentSet = mySets[currentSetIndex];
+
+            partsMeta.forEach(part => {
+                const data = currentSet[part.key];
+                const card = document.createElement('div');
+                card.className = "glass-card rounded-2xl p-2.5 flex flex-col items-center space-y-2 border border-slate-800";
+                
+                const isMainSelected = activePowerSlot && activePowerSlot.part === part.key && activePowerSlot.type === 'main';
+                const mainPowerObj = GEAR_POWERS.find(gp => gp.id === data.main);
+                const mainImgUrl = mainPowerObj ? `https://img.gamewith.jp/article_tools/splatoon3/gacha/gp${mainPowerObj.id}.png` : '';
+                
+                const mainHtml = `
+                    <div class="relative group" ondragover="event.preventDefault()" ondrop="dropPower(event, '${part.key}', 'main', 0)">
+                        <div onclick="selectSlot('${part.key}', 'main', 0)" class="w-12 h-12 rounded-full bg-slate-900 border-2 ${isMainSelected ? 'border-splat-yellow ring-4 ring-splat-yellow/40 scale-105' : data.main ? 'border-splat-yellow' : 'border-slate-700'} flex items-center justify-center cursor-pointer shadow-md transition hover:scale-105 overflow-hidden">
+                            ${mainPowerObj ? `<img src="${mainImgUrl}" class="w-full h-full object-cover" alt="${mainPowerObj.name}">` : '<span class="text-slate-600 text-[10px] font-bold">メイン</span>'}
+                        </div>
+                        ${data.main ? `<button onclick="clearPower('${part.key}', 'main', 0); event.stopPropagation();" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] flex items-center justify-center shadow">×</button>` : ''}
+                    </div>
+                `;
+
+                let subsHtml = '<div class="flex gap-1 justify-center">';
+                for (let i = 0; i < 3; i++) {
+                    const isSubSelected = activePowerSlot && activePowerSlot.part === part.key && activePowerSlot.type === 'sub' && activePowerSlot.index === i;
+                    const subId = data.subs[i];
+                    const subPowerObj = GEAR_POWERS.find(gp => gp.id === subId);
+                    const subImgUrl = subPowerObj ? `https://img.gamewith.jp/article_tools/splatoon3/gacha/gp${subPowerObj.id}.png` : '';
+                    
+                    subsHtml += `
+                        <div class="relative" ondragover="event.preventDefault()" ondrop="dropPower(event, '${part.key}', 'sub', ${i})">
+                            <div onclick="selectSlot('${part.key}', 'sub', ${i})" class="w-7 h-7 rounded-full bg-slate-900 border-2 ${isSubSelected ? 'border-splat-yellow ring-4 ring-splat-yellow/40 scale-105' : subId ? 'border-splat-yellow' : 'border-slate-700'} flex items-center justify-center cursor-pointer shadow transition hover:scale-105 overflow-hidden">
+                                ${subPowerObj ? `<img src="${subImgUrl}" class="w-full h-full object-cover" alt="${subPowerObj.name}">` : ''}
+                            </div>
+                            ${subId ? `<button onclick="clearPower('${part.key}', 'sub', ${i}); event.stopPropagation();" class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-500 text-white text-[8px] flex items-center justify-center shadow">×</button>` : ''}
+                        </div>
+                    `;
+                }
+                subsHtml += '</div>';
+
+                card.innerHTML = `
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${part.label}</span>
+                    ${mainHtml}
+                    ${subsHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderPowerPalette() {
+            const container = document.getElementById('power-palette-container');
+            container.innerHTML = '';
+
+            const anyPowers = GEAR_POWERS.filter(gp => gp.type === 'any');
+            const headPowers = GEAR_POWERS.filter(gp => gp.type === 'head_main');
+            const clothesPowers = GEAR_POWERS.filter(gp => gp.type === 'clothes_main');
+            const shoesPowers = GEAR_POWERS.filter(gp => gp.type === 'shoes_main');
+
+            function createBtn(gp) {
+                const imgUrl = `https://img.gamewith.jp/article_tools/splatoon3/gacha/gp${gp.id}.png`;
+                const btn = document.createElement('button');
+                btn.onclick = () => assignPower(gp.id);
+                btn.draggable = true;
+                btn.ondragstart = (e) => e.dataTransfer.setData('text/plain', gp.id);
+                btn.className = "p-1 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center transition active:scale-95 cursor-grab overflow-hidden aspect-square";
+                btn.title = gp.name;
+                btn.innerHTML = `<img src="${imgUrl}" class="w-full h-full object-cover rounded-lg" alt="${gp.name}">`;
+                return btn;
+            }
+
+            const anyGrid = document.createElement('div');
+            anyGrid.className = "grid grid-cols-7 gap-1.5";
+            anyPowers.forEach(gp => anyGrid.appendChild(createBtn(gp)));
+            container.appendChild(anyGrid);
+
+            const hr1 = document.createElement('hr');
+            hr1.className = "border-t border-slate-700 my-2";
+            container.appendChild(hr1);
+
+            const bottomGrid = document.createElement('div');
+            bottomGrid.className = "grid grid-cols-3 gap-2 items-center";
+
+            const headDiv = document.createElement('div');
+            headDiv.className = "grid grid-cols-2 gap-1.5 border-r border-dashed border-slate-700 pr-2";
+            headPowers.forEach(gp => headDiv.appendChild(createBtn(gp)));
+            bottomGrid.appendChild(headDiv);
+
+            const clothesDiv = document.createElement('div');
+            clothesDiv.className = "grid grid-cols-2 gap-1.5 border-r border-dashed border-slate-700 pr-2 pl-1";
+            clothesPowers.forEach(gp => clothesDiv.appendChild(createBtn(gp)));
+            bottomGrid.appendChild(clothesDiv);
+
+            const shoesDiv = document.createElement('div');
+            shoesDiv.className = "flex flex-col gap-1.5 pl-1";
+            
+            const shoesRow1 = document.createElement('div');
+            shoesRow1.className = "grid grid-cols-2 gap-1.5";
+            shoesPowers.slice(0, 2).forEach(gp => shoesRow1.appendChild(createBtn(gp)));
+            shoesDiv.appendChild(shoesRow1);
+
+            const shoesRow2 = document.createElement('div');
+            shoesRow2.className = "flex justify-center";
+            const lastBtnContainer = document.createElement('div');
+            lastBtnContainer.className = "w-[calc(50%-3px)]";
+            lastBtnContainer.appendChild(createBtn(shoesPowers[2]));
+            shoesRow2.appendChild(lastBtnContainer);
+            shoesDiv.appendChild(shoesRow2);
+
+            bottomGrid.appendChild(shoesDiv);
+
+            container.appendChild(bottomGrid);
+        }
+
+        function selectSlot(part, type, index) {
+            activePowerSlot = { part, type, index };
+            renderGearParts();
+        }
+
+        function assignPower(powerId) {
+            if (!activePowerSlot) {
+                activePowerSlot = { part: 'head', type: 'main', index: 0 };
+            }
+
+            const { part, type, index } = activePowerSlot;
+            const powerObj = GEAR_POWERS.find(gp => gp.id === powerId);
+            if (!powerObj) return;
+
+            if (powerObj.type === 'head_main' && (part !== 'head' || type !== 'main')) return;
+            if (powerObj.type === 'clothes_main' && (part !== 'clothes' || type !== 'main')) return;
+            if (powerObj.type === 'shoes_main' && (part !== 'shoes' || type !== 'main')) return;
+            if (powerObj.type !== 'any' && type === 'sub') return;
+
+            const target = mySets[currentSetIndex][part];
+            if (type === 'main') {
+                target.main = powerId;
+            } else {
+                target.subs[index] = powerId;
+            }
+
+            saveToStorage();
+            renderGearParts();
+        }
+
+        function dropPower(event, part, type, index) {
+            event.preventDefault();
+            const powerId = event.dataTransfer.getData('text/plain');
+            if (!powerId) return;
+
+            const powerObj = GEAR_POWERS.find(gp => gp.id === powerId);
+            if (!powerObj) return;
+
+            if (powerObj.type === 'head_main' && (part !== 'head' || type !== 'main')) return;
+            if (powerObj.type === 'clothes_main' && (part !== 'clothes' || type !== 'main')) return;
+            if (powerObj.type === 'shoes_main' && (part !== 'shoes' || type !== 'main')) return;
+            if (powerObj.type !== 'any' && type === 'sub') return;
+
+            const target = mySets[currentSetIndex][part];
+            if (type === 'main') {
+                target.main = powerId;
+            } else {
+                target.subs[index] = powerId;
+            }
+
+            saveToStorage();
+            renderGearParts();
+        }
+
+        function clearPower(part, type, index) {
+            const target = mySets[currentSetIndex][part];
+            if (type === 'main') {
+                target.main = "";
+            } else {
+                target.subs[index] = "";
+            }
+            saveToStorage();
+            renderGearParts();
+        }
+
+        // 「すべてクリア」ボタンの修正（確認ダイアログを挟まず即座に全クリア＆再描画）
+        function clearCurrentSet() {
+            mySets[currentSetIndex] = {
+                weapon: mySets[currentSetIndex].weapon,
+                head: { main: "", subs: ["", "", ""] },
+                clothes: { main: "", subs: ["", "", ""] },
+                shoes: { main: "", subs: ["", "", ""] }
+            };
+            saveToStorage();
+            renderGearParts();
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('splat3_my_gear_sets', JSON.stringify(mySets));
+        }
+
+        function renderAll() {
+            renderSetTabs();
+            renderWeaponSelect();
+            renderGearParts();
+            renderPowerPalette();
+        }
+
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const yy = String(now.getFullYear()).slice(-2);
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            return `${yy}${mm}${dd}${hh}${min}`;
+        }
+
+        function exportCSV() {
+            let csvRows = ["SetIndex,Weapon,Part,SlotType,SlotIndex,PowerId"];
+            mySets.forEach((set, sIdx) => {
+                ['head', 'clothes', 'shoes'].forEach(part => {
+                    csvRows.push(`${sIdx},"${set.weapon}","${part}","main",0,"${set[part].main}"`);
+                    set[part].subs.forEach((sub, subIdx) => {
+                        csvRows.push(`${sIdx},"${set.weapon}","${part}","sub",${subIdx},"${sub}"`);
+                    });
+                });
+            });
+
+            const csvString = csvRows.join("\n");
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const timestamp = getFormattedTimestamp();
+            const fileName = `splat3_my_gears_${timestamp}.csv`;
+
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = url;
+            downloadAnchor.setAttribute("download", fileName);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
+            URL.revokeObjectURL(url);
+            showToast('マイコーデをCSVで保存しました');
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const lines = e.target.result.split("\n");
+                    let newSets = JSON.parse(JSON.stringify(mySets));
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+                        const parts = line.split(',');
+                        const sIdx = parseInt(parts[0].trim());
+                        const weapon = parts[1].trim().replace(/"/g, '');
+                        const part = parts[2].trim().replace(/"/g, '');
+                        const slotType = parts[3].trim().replace(/"/g, '');
+                        const slotIndex = parseInt(parts[4].trim());
+                        const powerId = parts[5].trim().replace(/"/g, '');
+
+                        if (!isNaN(sIdx) && newSets[sIdx]) {
+                            newSets[sIdx].weapon = weapon;
+                            if (slotType === 'main') {
+                                newSets[sIdx][part].main = powerId;
+                            } else {
+                                newSets[sIdx][part].subs[slotIndex] = powerId;
+                            }
+                        }
+                    }
+                    mySets = newSets;
+                    saveToStorage();
+                    renderAll();
+                    showToast('CSVからマイコーデを復元しました！');
+                } catch (err) {
+                    alert('CSVファイルの読み込みに失敗しました。');
+                }
+            };
+            reader.readAsText(file, "UTF-8");
+        }
+
+        window.onload = function() {
+            renderAll();
+        };
+    </script>
+</body>
+</html>
+
